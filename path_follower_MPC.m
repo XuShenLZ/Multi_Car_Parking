@@ -48,11 +48,10 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 	speed_profile(1:acc_end_idx) = stage_acc(1:acc_end_idx);
 
 	% Deceleration stage
-	% Firstly it is a fliped version of acc
-	stage_dec = flip(stage_acc);
-	% Then check whether the stage is too long
-	dec_start_idx = max(path_len-k+2, ceil(0.5*path_len));
-	speed_profile(dec_start_idx:end) = stage_dec(2:end);
+	% It is a fliped version of acc
+	% The same length as the accelerating stage
+	% Added at the end of the speed_profile
+	speed_profile(end-acc_end_idx+1:end) = flip(stage_acc(1:acc_end_idx));
 
 	% Store
 	full_path = [full_path; speed_profile];
@@ -69,19 +68,38 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 
 	% The input vector
 	% u = [delta; a]
-	v_sim.u = [];
+	v_sim.u = [0; 0];
 
 	% The error vector between path and current position
 	current_dis = (full_path(1,:) - v_sim.z(1)).^2 +...
 				(full_path(2,:) - v_sim.z(2)).^2;
 	% The closest index
 	current_idx = find(current_dis == min(current_dis), 1);
-	% Look ahead for 5 points
+	% Look ahead for 3 points
 	% This ahead amount is for path following
 	% Not the same as MPC horizon N, but can be set according to 
 	% the relationship with N, dt, and speed
-	num_ahead = 5;
+	num_ahead = 3;
 	goal_idx = current_idx + num_ahead;
+
+	% Nonlinear Model
+	nonlin_model = @(z, u) [z(1) + dt * z(4) * cos(z(3));...    
+	        	z(2) + dt * z(4) * sin(z(3));...
+	        	z(3) + dt * z(4) * tan(u(1)) / auto.l;...
+	        	z(4) + dt * u(2)];
+
+	% Linearized Model
+	A = @(zBar, uBar) [0 0 -zBar(4)*sin(zBar(3)) cos(zBar(3));...
+					   0 0 zBar(4)*cos(zBar(3)) sin(zBar(3));...
+					   0 0 0 tan(uBar(1))/auto.l;...
+					   0 0 0 0];
+	B = @(zBar, uBar) [0 0;...
+					   0 0;...
+					   zBar(4)*sec(uBar(1))^2/auto.l 0;...
+					   0 1];
+	lin_model = @(z, u, zBar, uBar) (dt*A(zBar, uBar) + eye(4)) * (z - zBar) +...
+				dt*B(zBar, uBar)*(u-uBar) + nonlin_model(zBar, uBar);
+
 
 	disp('Path Following with MPC...');
 	k = 1;
@@ -101,23 +119,28 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 		% Constraints
 		constr = z(:,1) == v_sim.z(:,end);
 		for i = 1:N
+			if k == 1
+				constr = constr + [z(:,i+1) == nonlin_model(z(:,i), u(:,i))];
+			else
+				constr = constr + [z(:,i+1) == lin_model(z(:,i), u(:,i), zOpt(:,i+1), uOpt(:,i+1))];
+			end
 			constr = constr+...
-				[z(1,i+1) == z(1,i) + dt * z(4,i) * cos(z(3,i)),...    
-	        	z(2,i+1) == z(2,i) + dt * z(4,i) * sin(z(3,i)),...
-	        	z(3,i+1) == z(3,i) + dt * z(4,i) * tan(u(1,i)) / auto.l,...
-	        	z(4,i+1) == z(4,i) + dt * u(2,i)];
-	        constr = constr+...
-	        	[-auto.dmax <= u(1,i) <= auto.dmax,...
-	        	-auto.amax <= u(2,i) <= auto.amax];
-	    end
+				[-auto.dmax <= u(1,i) <= auto.dmax,...
+				-auto.amax <= u(2,i) <= auto.amax];
+		end
         
         options = sdpsettings('verbose', 0, 'solver','ipopt');
+        % options = sdpsettings('verbose', 0);
 
         optimize(constr, obj, options);
+        zOpt = double(z);
+        uOpt = double(u);
+        uOpt = [uOpt uOpt(:,end)];
 
         k = k + 1;
-        v_sim.z(:, k) = double(z(:,2));
-        v_sim.u(:, k-1) = double(u(:,1));
+        v_sim.u(:, k-1) = uOpt(:,1);
+        v_sim.z(:, k) = nonlin_model(v_sim.z(:, k-1), v_sim.u(:, k-1));
+
 
         p = plotcar(v_sim.z(1, k),v_sim.z(2, k),v_sim.z(3, k),v_sim.u(1, k-1),auto,gcf,[0.3 0.3 0.3]);
 
@@ -135,7 +158,7 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 	end
 
 	% Converge to the stop point
-	tol = 1e-4;
+	tol = 1e-2;
 	disp('Approaching the end of the path...');
 	while current_dis > tol
 		% Optimizer
@@ -147,20 +170,16 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 		obj = 0;
 		for i = 1:N
 			state_err = z(:, i) - full_path(:, end);
-			obj = obj + 5*state_err' * state_err;
+			obj = obj + 5 * state_err' * state_err;
 			obj = obj + 0.1 * u(:,i)' * u(:,i);
 		end
 		state_err = z(:, N+1) - full_path(:, end);
-		obj = obj + 5*state_err' * state_err;
+		obj = obj + 5 * state_err' * state_err;
 
 		% Constraints
 		constr = z(:,1) == v_sim.z(:,end);
 		for i = 1:N
-			constr = constr +...
-				[z(1,i+1) == z(1,i) + dt * z(4,i) * cos(z(3,i)),...    
-	        	z(2,i+1) == z(2,i) + dt * z(4,i) * sin(z(3,i)),...
-	        	z(3,i+1) == z(3,i) + dt * z(4,i) * tan(u(1,i)) / auto.l,...
-	        	z(4,i+1) == z(4,i) + dt * u(2,i)];
+			constr = constr + [z(:,i+1) == lin_model(z(:,i), u(:,i), zOpt(:,i+1), uOpt(:,i+1))];
 	        constr = constr+...
 	        	[0 <= z(4,i) <= auto.vmax,...
 	        	-auto.dmax <= u(1,i) <= auto.dmax,...
@@ -178,8 +197,13 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 		end
         
         k = k + 1;
-        v_sim.z(:, k) = double(z(:,2));
-        v_sim.u(:, k-1) = double(u(:,1));
+        zOpt = double(z);
+        uOpt = double(u);
+        uOpt = [uOpt uOpt(:,end)];
+
+        v_sim.u(:, k-1) = uOpt(:,1);
+        v_sim.z(:, k) = nonlin_model(v_sim.z(:, k-1), v_sim.u(:, k-1));
+
 
         p = plotcar(v_sim.z(1, k),v_sim.z(2, k),v_sim.z(3, k),v_sim.u(1, k-1),auto,gcf,[0.3 0.3 0.3]);
 

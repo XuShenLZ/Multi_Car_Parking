@@ -79,23 +79,23 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 	% This ahead amount is for path following
 	% Not the same as MPC horizon N, but can be set according to 
 	% the relationship with N, dt, and speed
-	num_ahead = 3;
+	num_ahead = 5;
 	goal_idx = current_idx + num_ahead;
 
 	% Nonlinear Model
 	nonlin_model = @(z, u) [z(1) + dt * z(4) * cos(z(3));...    
 	        	z(2) + dt * z(4) * sin(z(3));...
-	        	z(3) + dt * z(4) * tan(u(1)) / auto.l;...
+	        	z(3) + dt * z(4) * tan(u(1)) / auto.d;...
 	        	z(4) + dt * u(2)];
 
 	% Linearized Model
 	A = @(zBar, uBar) [0 0 -zBar(4)*sin(zBar(3)) cos(zBar(3));...
 					   0 0 zBar(4)*cos(zBar(3)) sin(zBar(3));...
-					   0 0 0 tan(uBar(1))/auto.l;...
+					   0 0 0 tan(uBar(1))/auto.d;...
 					   0 0 0 0];
 	B = @(zBar, uBar) [0 0;...
 					   0 0;...
-					   zBar(4)*sec(uBar(1))^2/auto.l 0;...
+					   zBar(4)*sec(uBar(1))^2/auto.d 0;...
 					   0 1];
 	lin_model = @(z, u, zBar, uBar) (dt*A(zBar, uBar) + eye(4)) * (z - zBar) +...
 				dt*B(zBar, uBar)*(u-uBar) + nonlin_model(zBar, uBar);
@@ -103,7 +103,7 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 
 	disp('Path Following with MPC...');
 	k = 1;
-	while goal_idx <= path_len
+	while goal_idx < path_len
 		% Optimizer
 		z = sdpvar(4, N+1);
 		u = sdpvar(2, N);
@@ -114,6 +114,10 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 		obj = state_err' * state_err;
 		for i = 1:N
 			obj = obj + 0.1 * u(:,i)' * u(:,i);
+			% The incremental amount of heading angle
+			% This is added to minimize heading overshoot
+			head_incre = z(3, i+1) - z(3, i);
+			obj = obj + 0.1 * head_incre' * head_incre;
 		end
 
 		% Constraints
@@ -141,7 +145,10 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
         v_sim.u(:, k-1) = uOpt(:,1);
         v_sim.z(:, k) = nonlin_model(v_sim.z(:, k-1), v_sim.u(:, k-1));
 
-
+        % if exist('p')
+        % 	pause(0.5)
+        % 	delete(p)
+        % end
         p = plotcar(v_sim.z(1, k),v_sim.z(2, k),v_sim.z(3, k),v_sim.u(1, k-1),auto,gcf,[0.3 0.3 0.3]);
 
         current_dis = (full_path(1,:) - v_sim.z(1, end)).^2 +...
@@ -152,13 +159,13 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 		% This ahead amount is for path following
 		% Not the same as MPC horizon N, but can be set according to 
 		% the relationship with N, dt, and speed
-		num_ahead = 5;
+		% num_ahead = 5;
 		goal_idx = current_idx + num_ahead;
 
 	end
 
 	% Converge to the stop point
-	tol = 1e-2;
+	tol = 1e-3;
 	disp('Approaching the end of the path...');
 	while current_dis > tol
 		% Optimizer
@@ -170,7 +177,7 @@ function [v_sim] = path_follower_MPC(auto, refPoses, v_sim, t_interval)
 		obj = 0;
 		for i = 1:N
 			state_err = z(:, i) - full_path(:, end);
-			obj = obj + 5 * state_err' * state_err;
+			obj = obj + 1 * state_err' * state_err;
 			obj = obj + 0.1 * u(:,i)' * u(:,i);
 		end
 		state_err = z(:, N+1) - full_path(:, end);

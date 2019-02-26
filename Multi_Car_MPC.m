@@ -8,9 +8,9 @@ close all;
 
 %% Car Model
 auto.w = 2.0;                         % car width [m]
-auto.db = 1.2;                        % rear axis position, from back [m]
+auto.db = 1.3;                        % rear axis position, from back [m]
 auto.df = 1.0;                        % front axis position, from front [m]
-auto.d = 2.8;                         % axel distance [m] %L in the midterm
+auto.d = 2.7;                         % axel distance [m] %L in the midterm
 auto.l = auto.d + auto.df + auto.db;  % car length [m]
 auto.tyr = 0.8;                       % tyre diameter [m]
 auto.dmax = 45*pi/180;                % maximum front wheel steering angle [rad]

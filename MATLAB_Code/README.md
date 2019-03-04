@@ -1,8 +1,8 @@
-# Multi_Car_Parking
+# MATLAB Version: Multi_Car_Parking
 
 This project realizes autonomous valet parking by using Model Predictive Control (MPC) Method. 
 
-![1550649893707](C:\Users\煦\AppData\Roaming\Typora\typora-user-images\1550649893707.png)
+![Effect](imgs\Effect.png)
 
 ## Current Features
 

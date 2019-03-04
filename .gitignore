@@ -1,6 +1,6 @@
 # Git Ignore
 
 # Folders
-/figures
+MATLAB_Code/figures
 
 # files

@@ -1,8 +1,8 @@
 # MATLAB Version: Multi_Car_Parking
 
-This project realizes autonomous valet parking by using Model Predictive Control (MPC) Method. 
+This project realizes autonomous valet parking by using Model Predictive Control (MPC) Method. This folder this the MATLAB version whiche is only able to plan and follow the path. Two cars are executed sequentially and not communicating. 
 
-![Effect](imgs\Effect.png)
+<img src="https://github.com/XuShenLZ/Multi_Car_Parking/blob/master/MATLAB_Code/imgs/Effect.png" width="700" />
 
 ## Current Features
 

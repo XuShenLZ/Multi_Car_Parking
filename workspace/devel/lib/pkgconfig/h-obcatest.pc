@@ -1,0 +1,8 @@
+prefix=/home/mpc/Multi_Car_Parking/workspace/devel
+
+Name: h-obcatest
+Description: Description of h-obcatest
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/mpc/Multi_Car_Parking/workspace/devel/lib 
+Requires: 

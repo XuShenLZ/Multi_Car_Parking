@@ -1,0 +1,8 @@
+string Start_lane
+string End_spot
+string End_pose
+---
+bool      succeed
+car_state path
+car_input input
+float64[] dt

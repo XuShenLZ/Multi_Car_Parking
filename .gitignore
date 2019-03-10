@@ -4,3 +4,5 @@
 MATLAB_Code/figures
 
 # files
+*.sublime-project
+*.sublime-workspace

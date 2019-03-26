@@ -1,6 +1,10 @@
 # Multi_Car_Parking
 Multi Car and High Density Parking Coodination
 ## Update log
+### 03/25/2019
+1. Built the plotting node which can subscribe to the car state and input topic and plot the car box and trajectory
+2. Small adjustion to the slot width parameters
+
 ### 03/09/2019
 1. Set up the ROS Package file structure, msg and srv
 2. Package `parking` is the main package for the future design of parking algorithm. The msg, srv are written here.

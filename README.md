@@ -1,6 +1,13 @@
 # Multi_Car_Parking
 Multi Car and High Density Parking Coodination
+
 ## Update log
+### 03/26/2019
+1. Added the "Go straight" function and the maneuver client, now single car can go along straight lane and park according to the specificed slot
+2. Added the cost map class, and define a naive cost map for the second car to identify the obstacle
+3. Added the second car to show up after some delay and avoid the first car by looking up the cost map
+4. There are a lot of bugs when two car is acting, need to fix next time. The current version is just a hard-coded demo (The plot function is also ugly changed to make a temperary 2-car demo)
+
 ### 03/25/2019
 1. Built the plotting node which can subscribe to the car state and input topic and plot the car box and trajectory
 2. Small adjustion to the slot width parameters

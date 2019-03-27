@@ -55,7 +55,7 @@ def plot_map():
 # =============== End MAP Plotting ===============
 
 # =============== Plot Car Box ==============
-def carBox(x0,phi,w,l):
+def car_box(x0,phi,w,l):
 	car1 = x0 + np.array([np.cos(phi)*l, np.sin(phi)*l]) + np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car2 = x0 + np.array([np.cos(phi)*l, np.sin(phi)*l]) - np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car3 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) + np.array([np.sin(phi)*w, -np.cos(phi)*w])
@@ -65,13 +65,13 @@ def carBox(x0,phi,w,l):
 
 # =============== End Car Box ==============
 
-class car_subsriber(object):
-	"""docstring for car_subsriber"""
+class CarSubscriber(object):
+	"""docstring for CarSubscriber"""
 	# car_num is the integer value of car number
-	def __init__(self, car_num):
-		super(car_subsriber, self).__init__()
-		self.x     = 0.0
-		self.y     = 0.0
+	def __init__(self, car_num, x0, y0):
+		super(CarSubscriber, self).__init__()
+		self.x     = x0
+		self.y     = y0
 		self.psi   = 0.0
 		self.v     = 0.0
 		self.delta = 0.0
@@ -109,8 +109,6 @@ def plot_car(info):
 	# Plot map
 	plt.ion()
 
-	plot_map()
-
 	# Load Data
 	x     = info.x
 	y     = info.y
@@ -129,30 +127,39 @@ def plot_car(info):
 
 	# Plot
 	# Car body
-	carBox(centerCar, psi, W_ev/2, L_ev/2)
+	car_box(centerCar, psi, W_ev/2, L_ev/2)
 	# Front wheels - steering included
-	carBox(x_cur + np.dot(Rot, np.array([L, w-0.15])) , psi + delta, 0.15, 0.3)
-	carBox(x_cur + np.dot(Rot, np.array([L, -w+0.15])), psi + delta, 0.15, 0.3)
+	car_box(x_cur + np.dot(Rot, np.array([L, w-0.15])) , psi + delta, 0.15, 0.3)
+	car_box(x_cur + np.dot(Rot, np.array([L, -w+0.15])), psi + delta, 0.15, 0.3)
 	# Rear wheels - no steering
-	carBox(x_cur + np.dot(Rot, np.array([0,  w-0.15])), psi, 0.15, 0.3)
-	carBox(x_cur + np.dot(Rot, np.array([0, -w+0.15])), psi, 0.15, 0.3)
+	car_box(x_cur + np.dot(Rot, np.array([0,  w-0.15])), psi, 0.15, 0.3)
+	car_box(x_cur + np.dot(Rot, np.array([0, -w+0.15])), psi, 0.15, 0.3)
 	
 	plt.hold(False)
-	plt.pause(0.001)
+	# plt.pause(0.001)
 
 def main():
 
 	# Subscriber Initialization
 	rospy.init_node('plotCar', anonymous=True)
 
-	plotter = car_subsriber(1)
+	plotter = CarSubscriber(1, -12, 1.5)
+	plotter2 = CarSubscriber(2, -12, -1.5)
 
 	loop_rate = 100
 	rate = rospy.Rate(loop_rate)
 
 	while not rospy.is_shutdown():
+		plot_map()
+		
 		info = plotter.read_info()
 		plot_car(info)
+
+		plt.hold(True)
+		info2 = plotter2.read_info()
+		plot_car(info2)
+
+		plt.pause(0.001)
 
 		rate.sleep()
 

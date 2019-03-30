@@ -1,6 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/parking_generate_messages_lisp"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/common-lisp/ros/parking/msg/car_state.lisp"
+  "/home/mpc/Multi_Car_Parking/workspace/devel/share/common-lisp/ros/parking/msg/cost_map.lisp"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/common-lisp/ros/parking/msg/car_input.lisp"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/common-lisp/ros/parking/srv/maneuver.lisp"
 )

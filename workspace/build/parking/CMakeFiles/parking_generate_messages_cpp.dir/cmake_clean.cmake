@@ -1,6 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/parking_generate_messages_cpp"
   "/home/mpc/Multi_Car_Parking/workspace/devel/include/parking/car_state.h"
+  "/home/mpc/Multi_Car_Parking/workspace/devel/include/parking/cost_map.h"
   "/home/mpc/Multi_Car_Parking/workspace/devel/include/parking/car_input.h"
   "/home/mpc/Multi_Car_Parking/workspace/devel/include/parking/maneuver.h"
 )

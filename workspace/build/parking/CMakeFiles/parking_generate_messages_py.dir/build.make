@@ -54,6 +54,7 @@ CMAKE_BINARY_DIR = /home/mpc/Multi_Car_Parking/workspace/build
 include parking/CMakeFiles/parking_generate_messages_py.dir/progress.make
 
 parking/CMakeFiles/parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_state.py
+parking/CMakeFiles/parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_cost_map.py
 parking/CMakeFiles/parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_input.py
 parking/CMakeFiles/parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py
 parking/CMakeFiles/parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py
@@ -65,34 +66,42 @@ parking/CMakeFiles/parking_generate_messages_py: /home/mpc/Multi_Car_Parking/wor
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating Python from MSG parking/car_state"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg
 
+/home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_cost_map.py: /opt/ros/kinetic/lib/genpy/genmsg_py.py
+/home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_cost_map.py: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating Python from MSG parking/cost_map"
+	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg
+
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_input.py: /opt/ros/kinetic/lib/genpy/genmsg_py.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_input.py: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating Python from MSG parking/car_input"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating Python from MSG parking/car_input"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg
 
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py: /opt/ros/kinetic/lib/genpy/gensrv_py.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py: /home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating Python code from SRV parking/maneuver"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating Python code from SRV parking/maneuver"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/genpy/cmake/../../../lib/genpy/gensrv_py.py /home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv
 
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py: /opt/ros/kinetic/lib/genpy/genmsg_py.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_state.py
+/home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_cost_map.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_input.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating Python msg __init__.py for parking"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Generating Python msg __init__.py for parking"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py -o /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg --initpy
 
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/__init__.py: /opt/ros/kinetic/lib/genpy/genmsg_py.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_state.py
+/home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_cost_map.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_input.py
 /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/__init__.py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Generating Python srv __init__.py for parking"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Generating Python srv __init__.py for parking"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/genpy/cmake/../../../lib/genpy/genmsg_py.py -o /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv --initpy
 
 parking_generate_messages_py: parking/CMakeFiles/parking_generate_messages_py
 parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_state.py
+parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_cost_map.py
 parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/_car_input.py
 parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/srv/_maneuver.py
 parking_generate_messages_py: /home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking/msg/__init__.py

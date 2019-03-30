@@ -2,6 +2,12 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 03/20/2019
+1. H-OBCA can now save and load from file
+2. The cost map can now be visualized
+3. Fixed some bug about multiple cars. Abd added a lot functions for multiple cars. Now the simulation can be carried out for multiple cars.
+4. The problem still exist: 1) The maneuver need to be specified from the begininng; 2) The collision avoidance is not always reliable 
+
 ### 03/26/2019
 1. Added the "Go straight" function and the maneuver client, now single car can go along straight lane and park according to the specificed slot
 2. Added the cost map class, and define a naive cost map for the second car to identify the obstacle

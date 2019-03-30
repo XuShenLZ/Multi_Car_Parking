@@ -1,6 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/parking_generate_messages_eus"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/roseus/ros/parking/msg/car_state.l"
+  "/home/mpc/Multi_Car_Parking/workspace/devel/share/roseus/ros/parking/msg/cost_map.l"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/roseus/ros/parking/msg/car_input.l"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/roseus/ros/parking/srv/maneuver.l"
   "/home/mpc/Multi_Car_Parking/workspace/devel/share/roseus/ros/parking/manifest.l"

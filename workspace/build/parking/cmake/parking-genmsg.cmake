@@ -1,6 +1,6 @@
 # generated from genmsg/cmake/pkg-genmsg.cmake.em
 
-message(STATUS "parking: 2 messages, 1 services")
+message(STATUS "parking: 3 messages, 1 services")
 
 set(MSG_I_FLAGS "-Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg;-Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg")
 
@@ -22,6 +22,11 @@ add_custom_target(_parking_generate_messages_check_deps_${_filename}
   COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "parking" "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg" ""
 )
 
+get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" NAME_WE)
+add_custom_target(_parking_generate_messages_check_deps_${_filename}
+  COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "parking" "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" ""
+)
+
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" NAME_WE)
 add_custom_target(_parking_generate_messages_check_deps_${_filename}
   COMMAND ${CATKIN_ENV} ${PYTHON_EXECUTABLE} ${GENMSG_CHECK_DEPS_SCRIPT} "parking" "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" ""
@@ -40,6 +45,12 @@ add_custom_target(_parking_generate_messages_check_deps_${_filename}
 ### Generating Messages
 _generate_msg_cpp(parking
   "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg"
+  "${MSG_I_FLAGS}"
+  ""
+  ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/parking
+)
+_generate_msg_cpp(parking
+  "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${gencpp_INSTALL_DIR}/parking
@@ -73,6 +84,8 @@ add_dependencies(parking_generate_messages parking_generate_messages_cpp)
 # add dependencies to all check dependencies targets
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg" NAME_WE)
 add_dependencies(parking_generate_messages_cpp _parking_generate_messages_check_deps_${_filename})
+get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" NAME_WE)
+add_dependencies(parking_generate_messages_cpp _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" NAME_WE)
 add_dependencies(parking_generate_messages_cpp _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv" NAME_WE)
@@ -89,6 +102,12 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS parking_generate_messages_cpp)
 ### Generating Messages
 _generate_msg_eus(parking
   "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg"
+  "${MSG_I_FLAGS}"
+  ""
+  ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/parking
+)
+_generate_msg_eus(parking
+  "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${geneus_INSTALL_DIR}/parking
@@ -122,6 +141,8 @@ add_dependencies(parking_generate_messages parking_generate_messages_eus)
 # add dependencies to all check dependencies targets
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg" NAME_WE)
 add_dependencies(parking_generate_messages_eus _parking_generate_messages_check_deps_${_filename})
+get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" NAME_WE)
+add_dependencies(parking_generate_messages_eus _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" NAME_WE)
 add_dependencies(parking_generate_messages_eus _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv" NAME_WE)
@@ -138,6 +159,12 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS parking_generate_messages_eus)
 ### Generating Messages
 _generate_msg_lisp(parking
   "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg"
+  "${MSG_I_FLAGS}"
+  ""
+  ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/parking
+)
+_generate_msg_lisp(parking
+  "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${genlisp_INSTALL_DIR}/parking
@@ -171,6 +198,8 @@ add_dependencies(parking_generate_messages parking_generate_messages_lisp)
 # add dependencies to all check dependencies targets
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg" NAME_WE)
 add_dependencies(parking_generate_messages_lisp _parking_generate_messages_check_deps_${_filename})
+get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" NAME_WE)
+add_dependencies(parking_generate_messages_lisp _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" NAME_WE)
 add_dependencies(parking_generate_messages_lisp _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv" NAME_WE)
@@ -187,6 +216,12 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS parking_generate_messages_lisp)
 ### Generating Messages
 _generate_msg_nodejs(parking
   "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg"
+  "${MSG_I_FLAGS}"
+  ""
+  ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/parking
+)
+_generate_msg_nodejs(parking
+  "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${gennodejs_INSTALL_DIR}/parking
@@ -220,6 +255,8 @@ add_dependencies(parking_generate_messages parking_generate_messages_nodejs)
 # add dependencies to all check dependencies targets
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg" NAME_WE)
 add_dependencies(parking_generate_messages_nodejs _parking_generate_messages_check_deps_${_filename})
+get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" NAME_WE)
+add_dependencies(parking_generate_messages_nodejs _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" NAME_WE)
 add_dependencies(parking_generate_messages_nodejs _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv" NAME_WE)
@@ -236,6 +273,12 @@ list(APPEND ${PROJECT_NAME}_EXPORTED_TARGETS parking_generate_messages_nodejs)
 ### Generating Messages
 _generate_msg_py(parking
   "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg"
+  "${MSG_I_FLAGS}"
+  ""
+  ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/parking
+)
+_generate_msg_py(parking
+  "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
   "${MSG_I_FLAGS}"
   ""
   ${CATKIN_DEVEL_PREFIX}/${genpy_INSTALL_DIR}/parking
@@ -268,6 +311,8 @@ add_dependencies(parking_generate_messages parking_generate_messages_py)
 
 # add dependencies to all check dependencies targets
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg" NAME_WE)
+add_dependencies(parking_generate_messages_py _parking_generate_messages_check_deps_${_filename})
+get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg" NAME_WE)
 add_dependencies(parking_generate_messages_py _parking_generate_messages_check_deps_${_filename})
 get_filename_component(_filename "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg" NAME_WE)
 add_dependencies(parking_generate_messages_py _parking_generate_messages_check_deps_${_filename})

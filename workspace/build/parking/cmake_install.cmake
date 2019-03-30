@@ -36,6 +36,7 @@ if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/parking/msg" TYPE FILE FILES
     "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg"
     "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg"
+    "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
     )
 endif()
 

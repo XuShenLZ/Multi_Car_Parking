@@ -54,6 +54,7 @@ CMAKE_BINARY_DIR = /home/mpc/Multi_Car_Parking/workspace/build
 include parking/CMakeFiles/parking_generate_messages_nodejs.dir/progress.make
 
 parking/CMakeFiles/parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/car_state.js
+parking/CMakeFiles/parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/cost_map.js
 parking/CMakeFiles/parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/car_input.js
 parking/CMakeFiles/parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv/maneuver.js
 
@@ -63,20 +64,26 @@ parking/CMakeFiles/parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating Javascript code from parking/car_state.msg"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/gennodejs/cmake/../../../lib/gennodejs/gen_nodejs.py /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg
 
+/home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/cost_map.js: /opt/ros/kinetic/lib/gennodejs/gen_nodejs.py
+/home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/cost_map.js: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating Javascript code from parking/cost_map.msg"
+	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/gennodejs/cmake/../../../lib/gennodejs/gen_nodejs.py /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg
+
 /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/car_input.js: /opt/ros/kinetic/lib/gennodejs/gen_nodejs.py
 /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/car_input.js: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Generating Javascript code from parking/car_input.msg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating Javascript code from parking/car_input.msg"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/gennodejs/cmake/../../../lib/gennodejs/gen_nodejs.py /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg
 
 /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv/maneuver.js: /opt/ros/kinetic/lib/gennodejs/gen_nodejs.py
 /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv/maneuver.js: /home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv
 /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv/maneuver.js: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg
 /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv/maneuver.js: /home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Generating Javascript code from parking/maneuver.srv"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/mpc/Multi_Car_Parking/workspace/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Generating Javascript code from parking/maneuver.srv"
 	cd /home/mpc/Multi_Car_Parking/workspace/build/parking && ../catkin_generated/env_cached.sh /home/mpc/Envs/parking/bin/python /opt/ros/kinetic/share/gennodejs/cmake/../../../lib/gennodejs/gen_nodejs.py /home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv -Iparking:/home/mpc/Multi_Car_Parking/workspace/src/parking/msg -Istd_msgs:/opt/ros/kinetic/share/std_msgs/cmake/../msg -p parking -o /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv
 
 parking_generate_messages_nodejs: parking/CMakeFiles/parking_generate_messages_nodejs
 parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/car_state.js
+parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/cost_map.js
 parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/msg/car_input.js
 parking_generate_messages_nodejs: /home/mpc/Multi_Car_Parking/workspace/devel/share/gennodejs/ros/parking/srv/maneuver.js
 parking_generate_messages_nodejs: parking/CMakeFiles/parking_generate_messages_nodejs.dir/build.make

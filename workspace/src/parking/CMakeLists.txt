@@ -51,6 +51,7 @@ add_message_files(
   FILES
   car_state.msg
   car_input.msg
+  cost_map.msg
 )
 
 ## Generate services in the 'srv' folder

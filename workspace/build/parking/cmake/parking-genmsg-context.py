@@ -1,6 +1,6 @@
 # generated from genmsg/cmake/pkg-genmsg.context.in
 
-messages_str = "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg;/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg"
+messages_str = "/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_state.msg;/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/car_input.msg;/home/mpc/Multi_Car_Parking/workspace/src/parking/msg/cost_map.msg"
 services_str = "/home/mpc/Multi_Car_Parking/workspace/src/parking/srv/maneuver.srv"
 pkg_name = "parking"
 dependencies_str = "std_msgs"

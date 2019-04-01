@@ -34,6 +34,7 @@ end
 
 function ros_server()
     init_node("julia_server")
+    println(pwd())
     s = Service{maneuver}("park_maneuver", handle_request)
     println("ready to send maneuver")
     spin()

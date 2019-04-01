@@ -7,20 +7,18 @@ import numpy as np
 from parking.msg import car_state, car_input, cost_map
 
 # Parameters
-ego  = [ 3.7, 1, 1, 1]
-L  = 2.7
-xp = [0, 0, np.pi/4, 0]
-up = [-np.pi/4, 0]
+ego = rospy.get_param('ego')
+L   = rospy.get_param('L')
 
 # The length of the map
-l_map = 24.0
+l_map  = rospy.get_param('l_map')
 
 # Lane width
-w_lane = 3.0
+w_lane = rospy.get_param('w_lane')
 
 # Spot width
-w_spot = 3.0
-l_spot = 5.0
+w_spot = rospy.get_param('w_spot')
+l_spot = rospy.get_param('l_spot')
 
 # Calculation
 W_ev = ego[1]+ego[3]
@@ -50,6 +48,8 @@ def plot_map():
 
 	# Plot properties
 	plt.axis('equal')
+	# plt.xlim(-20, 20)
+	# plt.ylim(-10, 10)
 
 	plt.title("Multi-car Parking")
 
@@ -89,13 +89,20 @@ class CarSubscriber(object):
 		self.v     = 0.0
 		self.delta = 0.0
 		self.acc   = 0.0
+
+		self.rest_park = car_state()
+		self.rest_park.x = []
+		self.rest_park.y = []
+
 		# Auto-create topic name for different cars
 		self.state_topicName = "state_%d" % car_num
 		self.input_topicName = "input_%d" % car_num
+		self.park_topicName  = "park_%d" % car_num
 
 		# Init subscriber
 		rospy.Subscriber(self.state_topicName, car_state, self.state_cb)
 		rospy.Subscriber(self.input_topicName, car_input, self.input_cb)
+		rospy.Subscriber(self.park_topicName,  car_state, self.park_cb)
 		print('Plot Subscriber for Car#%d Built' % car_num)
 
 	# Call back functions
@@ -111,6 +118,15 @@ class CarSubscriber(object):
 		self.acc   = data.acc[0]
 
 		print("Input Call Back")
+
+	# Receive the remaining parking maneuver trajectory
+	def park_cb(self, data):
+		self.rest_park.x = data.x
+		self.rest_park.y = data.y
+
+	# Plot the parking maneuver trajectory
+	def plot_park(self):
+		plt.plot(self.rest_park.x, self.rest_park.y, linewidth=1)
 
 	# Get data from the object
 	def read_info(self):
@@ -145,16 +161,18 @@ class CarSubscriber(object):
 		car_box(x_cur + np.dot(Rot, np.array([0,  w-0.15])), psi, 0.15, 0.3)
 		car_box(x_cur + np.dot(Rot, np.array([0, -w+0.15])), psi, 0.15, 0.3)
 		
-		plt.hold(False)
+		# plt.hold(False)
 		# plt.pause(0.001)
 
 class CostMapSubscriber(object):
 	"""docstring for CostMapSubscriber"""
-	def __init__(self, length, width, gridsize):
+	def __init__(self):
 		super(CostMapSubscriber, self).__init__()
-		self.gridsize = gridsize
-		self.xgrid    = range(-length/2, length/2+1, self.gridsize)
-		self.ygrid    = range(-width/2, width/2+1, self.gridsize)
+		gridsize = rospy.get_param('gridsize')
+		cmap_len = rospy.get_param('cmap_len')
+		cmap_wid = rospy.get_param('cmap_wid')
+		self.xgrid    = range(-cmap_len/2, cmap_len/2+1, gridsize)
+		self.ygrid    = range(-cmap_wid/2, cmap_wid/2+1, gridsize)
 
 		self.length   = len(self.xgrid)
 		self.width    = len(self.ygrid)
@@ -208,10 +226,31 @@ def main():
 	plotter = CarSubscriber(5, "L")
 	plotter_list.append(plotter)
 
+	plotter = CarSubscriber(6, "U")
+	plotter_list.append(plotter)
 
-	costmap = CostMapSubscriber(24, 16, 1)
+	plotter = CarSubscriber(7, "U")
+	plotter_list.append(plotter)
 
-	loop_rate = 100
+	plotter = CarSubscriber(8, "U")
+	plotter_list.append(plotter)
+
+	plotter = CarSubscriber(9, "U")
+	plotter_list.append(plotter)
+
+	plotter = CarSubscriber(10, "L")
+	plotter_list.append(plotter)
+
+	plotter = CarSubscriber(11, "U")
+	plotter_list.append(plotter)
+
+	plotter = CarSubscriber(12, "L")
+	plotter_list.append(plotter)
+
+
+	costmap = CostMapSubscriber()
+
+	loop_rate = rospy.get_param('plot_rate')
 	rate = rospy.Rate(loop_rate)
 
 	while not rospy.is_shutdown():
@@ -221,9 +260,13 @@ def main():
 		
 		for plotter in plotter_list:
 			plt.hold(True)
+			# Plot the parking maneuver
+			plotter.plot_park()
+			# Plot the car body
 			plotter.plot_car()
+			plt.hold(False)
 
-		plt.pause(0.001)
+		plt.pause(0.0001)
 
 		rate.sleep()
 

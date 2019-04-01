@@ -1,0 +1,26 @@
+<launch>
+	<rosparam 
+		command ="load" 
+		file="$(find parking)/launch/parking_parameters.yaml"/>
+
+	<!-- H-OBCA Node -->
+	<node 
+		pkg="H-OBCA" 
+		type="run_HOBCA.jl" 
+		name="HOBCA_maneuver_server" 
+		output="screen" />
+
+	<!-- Simulation Plot Node -->
+	<node 
+		pkg="parking" 
+		type="plot_car.py" 
+		name="plotCar" 
+		output="screen"/>
+	<!-- Car Control Node -->
+	<node 
+		pkg="parking" 
+		type="car_control.py" 
+		name="carNode" 
+		output="screen"/>
+
+</launch>

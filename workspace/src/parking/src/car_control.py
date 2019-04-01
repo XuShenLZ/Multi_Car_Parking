@@ -9,10 +9,10 @@ import numpy as np
 
 # parameters
 # The length of the map
-l_map = 24
+l_map  = rospy.get_param('l_map')
 
 # Lane width
-w_lane = 3.0
+w_lane = rospy.get_param('w_lane')
 
 class Vehicle(object):
 	"""docstring for Vehicle"""
@@ -65,9 +65,13 @@ class Vehicle(object):
 		# Auto-create topic name for different cars
 		self.state_topicName = "state_%d" % car_num
 		self.input_topicName = "input_%d" % car_num
+		self.park_topicName  = "park_%d" % car_num
 
 		# State publisher
 		self.state_pub = rospy.Publisher(self.state_topicName, car_state, queue_size = 10)
+
+		# Parking maneuver publisher
+		self.maneuver_pub = rospy.Publisher(self.park_topicName, car_state, queue_size = 10)
 
 	def publish_state(self):
 		pub_data = car_state()
@@ -82,6 +86,9 @@ class Vehicle(object):
 
 	def start_parking(self):
 		return self.parking
+
+	def add_time(self):
+		self.t += 1
 
 	def drive_straight(self):
 		# If the car has now reached the departure time
@@ -134,6 +141,7 @@ class Vehicle(object):
 		rest_park = car_state()
 		rest_park.x = np.array(self.maneuver_data.path.x[self.pIdx:end_idx]) + offset
 		rest_park.y = np.array(self.maneuver_data.path.y[self.pIdx:end_idx])
+		self.maneuver_pub.publish(rest_park)
 		return rest_park
 
 	def get_maneuver(self, end_spot, end_pose):
@@ -153,12 +161,14 @@ class Vehicle(object):
 
 class CostMap(object):
 	"""docstring for CostMap"""
-	def __init__(self, length, width, gridsize):
+	def __init__(self):
 		super(CostMap, self).__init__()
 		# The dimension of the costmap
-		self.gridsize = gridsize
-		self.xgrid    = range(-length/2, length/2+1, self.gridsize)
-		self.ygrid    = range(-width/2, width/2+1, self.gridsize)
+		gridsize = rospy.get_param('gridsize')
+		cmap_len = rospy.get_param('cmap_len')
+		cmap_wid = rospy.get_param('cmap_wid')
+		self.xgrid    = range(-cmap_len/2, cmap_len/2+1, gridsize)
+		self.ygrid    = range(-cmap_wid/2, cmap_wid/2+1, gridsize)
 		self.length   = len(self.xgrid)
 		self.width    = len(self.ygrid)
 		self.time     = 0
@@ -206,18 +216,28 @@ class CostMap(object):
 		if self.cost.has_key((int(x_floor), int(y_floor))):
 			return self.cost[(int(x_floor), int(y_floor))]
 		else:
-			print("Out of costmap range")
+			print("Detection is out of costmap range")
 			return 0
 
 # Detect the collision of the path ahead
 def not_collide(car, costmap):
 	state = car.get_state()
-	for l in range(0,7):
-		for j in range(-1,2):
-			check_x = state.x + l*math.cos(state.psi) + j*math.sin(state.psi)
-			check_y = state.y + l*math.sin(state.psi) - j*math.cos(state.psi)
-			if costmap.get_cost(check_x, check_y) != 0:
-				return False
+
+	if not state.parking:
+		# Only need to see front if going straight
+		for l in range(2,7):
+			for j in range(-1,2):
+				check_x = state.x + l*math.cos(state.psi) + j*math.sin(state.psi)
+				check_y = state.y + l*math.sin(state.psi) - j*math.cos(state.psi)
+				if costmap.get_cost(check_x, check_y) != 0:
+					return False
+	else:
+		# Only need to check along t
+		rest_maneuver = car.get_restpark()
+		for check_x in rest_maneuver.x:
+			for check_y in rest_maneuver.y:
+				if costmap.get_cost(check_x, check_y) != 0:
+					return False
 
 	return True
 	
@@ -237,7 +257,7 @@ def main():
 	# The iteration time
 	time = 0
 
-	costmap = CostMap(24, 16, 1)
+	costmap = CostMap()
 
 	car_list = []
 
@@ -257,49 +277,106 @@ def main():
 	car_list.append(car)
 
 
-	t0   = 40
+	t0   = 30
 	goal = -1.5
 	car = Vehicle(3, "U", t0, goal)
 	car.get_maneuver("U", "R")
 
 	car_list.append(car)
 
-	t0   = 0
+	t0   = 40
 	goal = -7.5
 	car = Vehicle(4, "L", t0, goal)
 	car.get_maneuver("U", "F")
 
 	car_list.append(car)
 
-	t0   = 20
+	t0   = 60
 	goal = 1.5
 	car = Vehicle(5, "L", t0, goal)
 	car.get_maneuver("L", "R")
 
 	car_list.append(car)
 
-	loop_rate = 10
+	t0   = 50
+	goal = 1.5
+	car = Vehicle(6, "U", t0, goal)
+	car.get_maneuver("U", "F")
+
+	car_list.append(car)
+
+	t0   = 60
+	goal = 4.5
+	car = Vehicle(7, "U", t0, goal)
+	car.get_maneuver("U", "R")
+
+	car_list.append(car)
+
+	t0   = 70
+	goal = 4.5
+	car = Vehicle(8, "U", t0, goal)
+	car.get_maneuver("L", "F")
+
+	car_list.append(car)
+
+	t0   = 80
+	goal = -7.5
+	car = Vehicle(9, "U", t0, goal)
+	car.get_maneuver("L", "R")
+
+	car_list.append(car)
+
+	t0   = 70
+	goal = -4.5
+	car = Vehicle(10, "L", t0, goal)
+	car.get_maneuver("L", "F")
+
+	car_list.append(car)
+
+	t0   = 90
+	goal = -10.5
+	car = Vehicle(11, "U", t0, goal)
+	car.get_maneuver("U", "F")
+
+	car_list.append(car)
+
+	t0   = 80
+	goal = -10.5
+	car = Vehicle(12, "L", t0, goal)
+	car.get_maneuver("L", "R")
+
+	car_list.append(car)
+
+	loop_rate = rospy.get_param('ctrl_rate')
 	rate = rospy.Rate(loop_rate)
 	while not rospy.is_shutdown():
 
-		costmap.reset_map()
-
 		for car in car_list:
+			# Update Map
+			costmap.reset_map()
+			for other_car in car_list:
+				if not (other_car == car or other_car.is_terminated()):
+					if other_car.start_parking():
+						write_cost_maneuver(other_car, costmap)
+					state = other_car.get_state()
+					costmap.write_cost(state.x, state.y)
+
 			# If the car is still running
 			if not car.is_terminated():
+				# car.add_time()
 				# If the car has not arrived at the starting point
 				if not car.start_parking():
 					if not_collide(car, costmap):
 						car.drive_straight()
 				else:
 					if not_collide(car, costmap):
-						write_cost_maneuver(car, costmap)
 						car.drive_parking()
+					write_cost_maneuver(car, costmap)
 
 				state = car.get_state()
 				costmap.write_cost(state.x, state.y)
 
-		costmap.pub_costmap()
+			costmap.pub_costmap()
 		# Time increase
 		time += 1
 		rate.sleep()

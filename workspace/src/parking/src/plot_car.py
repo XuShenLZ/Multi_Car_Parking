@@ -210,6 +210,32 @@ def main():
 	# Subscriber Initialization
 	rospy.init_node('plotCar', anonymous=True)
 
+	plotter_list = init_cars()
+
+	costmap = CostMapSubscriber()
+
+	loop_rate = rospy.get_param('plot_rate')
+	rate = rospy.Rate(loop_rate)
+
+	while not rospy.is_shutdown():
+		plot_map()
+
+		costmap.plot_costmap()
+		
+		for plotter in plotter_list:
+			plt.hold(True)
+			# Plot the parking maneuver
+			plotter.plot_park()
+			# Plot the car body
+			plotter.plot_car()
+			plt.hold(False)
+
+		plt.pause(0.0001)
+
+		rate.sleep()
+
+def init_cars():
+
 	plotter_list = []
 
 	plotter = CarSubscriber(1, "U")
@@ -248,28 +274,7 @@ def main():
 	plotter = CarSubscriber(12, "L")
 	plotter_list.append(plotter)
 
-
-	costmap = CostMapSubscriber()
-
-	loop_rate = rospy.get_param('plot_rate')
-	rate = rospy.Rate(loop_rate)
-
-	while not rospy.is_shutdown():
-		plot_map()
-
-		costmap.plot_costmap()
-		
-		for plotter in plotter_list:
-			plt.hold(True)
-			# Plot the parking maneuver
-			plotter.plot_park()
-			# Plot the car body
-			plotter.plot_car()
-			plt.hold(False)
-
-		plt.pause(0.0001)
-
-		rate.sleep()
+	return plotter_list
 
 if __name__ == '__main__':
 	try:

@@ -87,7 +87,7 @@ class Vehicle(object):
 	def get_state(self):
 		return self
 
-	def start_parking(self):
+	def is_parking(self):
 		return self.parking
 
 	def add_time(self):
@@ -141,9 +141,10 @@ class Vehicle(object):
 		offset = self.goal - self.maneuver_data.path.x[0]
 		end_idx = len(self.maneuver_data.path.x)
 
-		rest_park = car_state()
-		rest_park.x = np.array(self.maneuver_data.path.x[self.pIdx:end_idx]) + offset
-		rest_park.y = np.array(self.maneuver_data.path.y[self.pIdx:end_idx])
+		rest_park     = car_state()
+		rest_park.x   = np.array(self.maneuver_data.path.x[self.pIdx:end_idx]) + offset
+		rest_park.y   = np.array(self.maneuver_data.path.y[self.pIdx:end_idx])
+		rest_park.psi = np.array(self.maneuver_data.path.psi[self.pIdx:end_idx])
 		self.maneuver_pub.publish(rest_park)
 		return rest_park
 
@@ -160,6 +161,32 @@ class Vehicle(object):
 
 	def is_terminated(self):
 		return self.terminated
+
+	# Detect the collision of the path ahead
+	def not_collide(self, costmap):
+
+		if not self.is_parking():
+			# Only need to see front if going straight
+			for l in range(2,7):
+				for j in range(-1,2):
+					check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
+					check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
+					cost = costmap.get_cost(check_x, check_y)
+					if cost[0] != 0 and cost[1] != self.car_num:
+						return False
+		else:
+			# Only need to check along the parking trajectory
+			rest_maneuver = self.get_restpark()
+			for i in range(0, len(rest_maneuver.x)):
+				for l in range(-1,5):
+					for j in range(-1,2):
+						check_x = rest_maneuver.x[i] + l*math.cos(rest_maneuver.psi[i]) + j*math.sin(rest_maneuver.psi[i])
+						check_y = rest_maneuver.y[i] + l*math.sin(rest_maneuver.psi[i]) - j*math.cos(rest_maneuver.psi[i])
+						cost = costmap.get_cost(check_x, check_y)
+						if cost[0] != 0 and cost[1] != self.car_num:
+							return False
+
+		return True
 		
 
 class CostMap(object):
@@ -205,15 +232,22 @@ class CostMap(object):
 			for j in self.ygrid:
 				self.cost[(i, j)] = (0, 0)
 
-	def write_cost(self, x, y, car_num):
-		x_floor = math.floor(x-1)
-		y_floor = math.floor(y-1)
-		x_ceil  = math.ceil(x+1)
-		y_ceil  = math.ceil(y+1)
-		for i in range(int(x_floor), int(x_ceil)):
-			for j in range(int(y_floor), int(y_ceil)):
-				if self.cost.has_key((i,j)):
-					self.cost[(i, j)] = (1, car_num)
+	def write_cost(self, x, y, psi, car_num):
+		for l in range(-1,5):
+			for j in range(-1,2):
+				write_x = math.floor(x + l*math.cos(psi) + j*math.sin(psi))
+				write_y = math.floor(y + l*math.sin(psi) - j*math.cos(psi))
+				if self.cost.has_key((int(write_x), int(write_y))):
+					self.cost[(int(write_x), int(write_y))] = (1, car_num)
+	
+	def write_cost_maneuver(self, car):
+		state = car.get_state()
+		rest_maneuver = car.get_restpark()
+		length = len(rest_maneuver.x)
+
+		for i in range(0,length):
+			self.write_cost(rest_maneuver.x[i], rest_maneuver.y[i], rest_maneuver.psi[i], state.car_num)
+
 
 	def get_cost(self, x, y):
 		x_floor = math.floor(x)
@@ -223,47 +257,57 @@ class CostMap(object):
 		else:
 			print("Detection is out of costmap range")
 			return (0, 0)
-
-# Detect the collision of the path ahead
-def not_collide(car, costmap):
-	state = car.get_state()
-
-	if not state.parking:
-		# Only need to see front if going straight
-		for l in range(2,7):
-			for j in range(-1,2):
-				check_x = state.x + l*math.cos(state.psi) + j*math.sin(state.psi)
-				check_y = state.y + l*math.sin(state.psi) - j*math.cos(state.psi)
-				cost = costmap.get_cost(check_x, check_y)
-				if cost[0] != 0 and cost[1] != state.car_num:
-					return False
-	else:
-		# Only need to check along the parking trajectory
-		rest_maneuver = car.get_restpark()
-		for i in range(0, len(rest_maneuver.x)):
-			check_x = rest_maneuver.x[i]
-			check_y = rest_maneuver.y[i]
-			cost = costmap.get_cost(check_x, check_y)
-			if cost[0] != 0 and cost[1] != state.car_num:
-				return False
-
-	return True
 	
-
-def write_cost_maneuver(car, costmap):
-	state = car.get_state()
-	rest_maneuver = car.get_restpark()
-	length = len(rest_maneuver.x)
-
-	for i in range(0,length):
-		costmap.write_cost(rest_maneuver.x[i], rest_maneuver.y[i], state.car_num)
-
 def main():
 
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
 	costmap = CostMap()
+
+	car_list = init_cars()
+
+	loop_rate = rospy.get_param('ctrl_rate')
+	rate = rospy.Rate(loop_rate)
+	while not rospy.is_shutdown():
+
+		for car in car_list:
+			# Update Map
+			costmap.reset_map()
+
+			# Register the current positions of all cars
+			for car0 in car_list:
+				if not car0.is_terminated():
+					state = car0.get_state()
+					costmap.write_cost(state.x, state.y, state.psi, state.car_num)
+
+			# Register the collision-free parking maneuver
+			for car0 in car_list:
+				if not car0.is_terminated():
+					if car0.not_collide(costmap):
+						if car0.is_parking():
+							costmap.write_cost_maneuver(car0)
+
+			costmap.pub_costmap()
+
+			# Car control
+			# If the car is still running
+			if not car.is_terminated():
+				# Time increase
+				car.add_time()
+				# If the car has not arrived at the starting point
+				if not car.is_parking():
+					if car.not_collide(costmap):
+						car.drive_straight()
+				else:
+					if car.not_collide(costmap):
+						car.drive_parking()
+
+
+		rate.sleep()
+		# raw_input()
+
+def init_cars():
 
 	car_list = []
 
@@ -352,42 +396,7 @@ def main():
 
 	car_list.append(car)
 
-	loop_rate = rospy.get_param('ctrl_rate')
-	rate = rospy.Rate(loop_rate)
-	while not rospy.is_shutdown():
-
-		for car in car_list:
-			# Update Map
-			costmap.reset_map()
-			for car0 in car_list:
-				if not car0.is_terminated():
-					if not_collide(car0, costmap):
-						if car0.start_parking():
-							write_cost_maneuver(car0, costmap)
-					state = car0.get_state()
-					costmap.write_cost(state.x, state.y, state.car_num)
-
-			# Car control
-			# If the car is still running
-			if not car.is_terminated():
-				# Time increase
-				car.add_time()
-				# If the car has not arrived at the starting point
-				if not car.start_parking():
-					if not_collide(car, costmap):
-						car.drive_straight()
-				else:
-					if not_collide(car, costmap):
-						write_cost_maneuver(car, costmap)
-						car.drive_parking()
-
-				state = car.get_state()
-				costmap.write_cost(state.x, state.y, state.car_num)
-
-			costmap.pub_costmap()
-
-		rate.sleep()
-		# raw_input()
+	return car_list
 
 if __name__ == '__main__':
 	try:

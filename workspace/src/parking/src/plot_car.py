@@ -64,6 +64,7 @@ def car_box(x0,phi,w,l):
 	car3 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) + np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car4 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) - np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	plt.plot([car1[0],car2[0],car4[0],car3[0],car1[0]],[car1[1],car2[1],car4[1],car3[1],car1[1]],'b', linewidth=2.0)
+	plt.xlim(-15, 15)
 	# plt.draw()
 
 # =============== End Car Box ==============
@@ -111,13 +112,13 @@ class CarSubscriber(object):
 		self.y   = data.y[0]
 		self.psi = data.psi[0]
 		self.v   = data.v[0]
-		print("State Call Back")
+		# print("State Call Back")
 
 	def input_cb(self, data):
 		self.delta = data.delta[0]
 		self.acc   = data.acc[0]
 
-		print("Input Call Back")
+		# print("Input Call Back")
 
 	# Receive the remaining parking maneuver trajectory
 	def park_cb(self, data):
@@ -188,7 +189,7 @@ class CostMapSubscriber(object):
 		self.width  = data.width
 		self.time   = data.time
 
-		self.cost   = np.zeros((self.width, self.length))
+		# self.cost   = np.zeros((self.width, self.length))
 
 		# The index to extract value from cost_map.data
 		k = 0
@@ -199,7 +200,7 @@ class CostMapSubscriber(object):
 				self.cost[i][j] = data.data[k]
 				k += 1
 
-		print("Cost Map Updated")
+		# print("Cost Map Updated")
 
 	def plot_costmap(self):
 		plt.pcolormesh(self.X, self.Y, self.cost, alpha=0.5)

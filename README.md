@@ -2,11 +2,16 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 04/01/2019
+1. Fixed the bug in cost writting function when writing the parking trajectory to cost map.
+2. The cost map is now a 2-tuple (cost, car_num) which marks the cost and the producer of it at the same time. Cars will not identify the cost produced by itself as collision.
+
+
 ### 03/31/2019
 1. Set up roslaunch and parameter service. Now H-OBCA, plot and control can be started by a single roslaunch.
 2. Edited the cost map update: In the loop of every car, the map is firstly reset, then loop around every other car to collect the location and maenuver data
 3. Edited the collision detection: If the car is going straight, check the cost in front of the path; if the car is in the middle of the parking maneuver, check the collision in the rest of the path.
-4. The algorithm works when there is only 5 cars. When added the number of cars to 12, a dead lock happens between cars. Therefore, **the time information should be considered in the collision avoidance**.
+4. The algorithm works when there is only 5 cars. When added the number of cars to 12, a dead lock happens between cars. Therefore, **the time information should be considered in the collision avoidance, or the cost map should include producer of the corresponding cost**.
 
 ### 03/30/2019
 1. H-OBCA can now save and load from file

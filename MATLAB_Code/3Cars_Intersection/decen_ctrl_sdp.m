@@ -3,7 +3,7 @@
 clear
 Cars = car_init(3);
 % Horizon Length
-N = 30;
+N = 35;
 % Time interval
 dt = 0.1;
 
@@ -11,11 +11,11 @@ dt = 0.1;
 v_ref = 5;
 
 % Safety Distance
-d_safe = 5;
+d_safe = 4;
 
 % Weights
 Q = 1;
-R = 1;
+R = 0.5;
 S = 1;
 
 % Time
@@ -80,6 +80,8 @@ while is_inside(Cars)
 			uOpt = double(u);
 			Cars{i}.x = [Cars{i}.x, xOpt{i}(:,2)];
 			Cars{i}.u = [Cars{i}.u, uOpt(1)];
+			last_state = dyn_model(xOpt{i}(:, end), uOpt(end));
+			xOpt{i} = [xOpt{i} last_state];
 		else
 			U = sdpvar(N, N);
 			u = sdpvar(N, 1);
@@ -102,15 +104,15 @@ while is_inside(Cars)
 
 			% Mean velocity constraint
 			constr = [constr,...
-					sum(dt*Mv_i*u + Mv_i*v_v0) >= Cars{i}.s_out - Cars{i}.x(1,1)];
+					dt * sum(dt*Mv_i*u + Mv_i*v_v0) >= Cars{i}.s_out - Cars{i}.x(1,end)];
 
 			% Collision Avoidance
 			for j=1:3
 				if j<i
-					for k=1:N
-						d_ji = abs(s_last{j}(k) - Cars{j}.sc(i));
+					for k=3:N+1
+						d_ji = abs(Cars{j}.s_last(k) - Cars{j}.sc(i));
 						if d_ji<d_safe
-							[Pl, qlT, rl] = sdp_constr(N, x0, dt, Cars{i}.sc(j), d_ji, d_safe, k);
+							[Pl, qlT, rl] = sdp_constr(N, x0, dt, Cars{i}.sc(j), d_ji, d_safe, k-1);
 							constr = [constr,...
 								trace(U*Pl) + qlT*u + rl <= 0];
 						end
@@ -122,11 +124,20 @@ while is_inside(Cars)
 			diagnostics = optimize(constr, obj, options)
 			UOpt = double(U);
 			uOpt = double(u);
+			SOpt = [UOpt uOpt; uOpt' 1];
+			Sigma = svd(SOpt);
+			if Sigma(2) > 1e-3
+				u_rand = random_sol(uOpt, UOpt-uOpt*uOpt', P0, q0T, dt, Mv_i, v_v0, Cars, d_safe, N, i);
+				disp(['Car ', num2str(i), ' Random']);
+				uOpt = u_rand;
+			end
 
 			xOpt{i} = x0;
 			for k=1:N
 				xOpt{i}(:, k+1) = dyn_model(xOpt{i}(:, k), uOpt(k));
 			end
+			xOpt{i}(:, k+2) = dyn_model(xOpt{i}(:, N+1), uOpt(N));
+
 			Cars{i}.x = [Cars{i}.x, xOpt{i}(:,2)];
 			Cars{i}.u = [Cars{i}.u, uOpt(1)];
 
@@ -135,11 +146,11 @@ while is_inside(Cars)
 	end
 
 	for i=1:3
-	    s_last{i} = xOpt{i}(1, 2:end);
+	    Cars{i}.s_last = xOpt{i}(1, 2:end);
 	end
 end
 
-% Plot
+%% Plot
 for t0=1:t
 	for i=1:3
 		plot_map()

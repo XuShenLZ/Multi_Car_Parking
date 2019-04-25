@@ -2,9 +2,10 @@
 % avoidance constraint
 clear
 Cars = car_init(3);
-plot_map()
 % Horizon Length
 N = 30;
+% Time interval
+dt = 0.1;
 
 % Reference Velocity
 v_ref = 5;
@@ -66,7 +67,7 @@ while is_inside(Cars)
 		% Mean Velocity constraint
 		% Mean >= Mean is equvalent to Sum >= Sum
 		constr = [constr,...
-				sum(x(2,:)) >= Cars{i}.s_out - Cars{i}.x(1,1)];
+				dt * sum(x(2,:)) >= Cars{i}.s_out - Cars{i}.x(1,end)];
 
 		% Collision Avoidance
 		for k=1:N

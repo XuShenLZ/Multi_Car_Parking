@@ -2,6 +2,11 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 04/25/2019
+1. In MATLAB, implemented the algorithm in reference[2] about intersection conflict resolution. 
+2. Three cars use double integrator model on pre-planned path. The safety constraints are formulated as QCQP and then relaxed as SDP. For rank-1 constraint, randomization technique is adopted.
+3. This technique in intersection scenario can be adopted to parking lot.
+
 ### 04/02/2019
 1. Fixed the bug in cost writting function when writing the parking trajectory to cost map. Now all the grids that the car body covers will be registered in the cost map. The collision is therefore totally avoided.
 2. The cost map is now a 2-tuple (cost, car_num) which marks the cost and the producer of it at the same time. Cars will not identify the cost produced by itself as collision.
@@ -44,3 +49,4 @@ Reorganized the files and archived MATLAB code into a seperate folder
 
 ## Reference
 1. Zhang, Xiaojing, Alexander Liniger, and Francesco Borrelli. "Optimization-based collision avoidance." arXiv preprint arXiv:1711.03449 (2017). (Github repo: <https://github.com/XiaojingGeorgeZhang/H-OBCA>)
+2. Katriniok, Alexander, Peter Kleibaum, and Martina Joševski. "Automation of Road Intersections Using Distributed Model Predictive Control." Control Strategies for Advanced Driver Assistance Systems and Autonomous Driving Functions. Springer, Cham, 2019. 175-199.

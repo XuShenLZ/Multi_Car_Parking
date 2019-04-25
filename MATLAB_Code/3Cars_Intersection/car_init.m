@@ -22,8 +22,8 @@ function Cars = car_init(num)
 
 	% Cars-specific parameters
 	Cars{1}.s = 0;
-	Cars{2}.s = -1;
-	Cars{3}.s = -3;
+	Cars{2}.s = -3;
+	Cars{3}.s = -6;
 
 	for i=1:num
 		Cars{i}.v    = v0;

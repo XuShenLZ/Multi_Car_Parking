@@ -54,3 +54,6 @@ function carBox(car, car_num, x0, phi)
     car4 = x0 - [cos(phi)*l;sin(phi)*l] - [sin(phi)*w;-cos(phi)*w];
     colors = 'rgb';
     plot([car1(1),car2(1),car4(1),car3(1),car1(1)],[car1(2),car2(2),car4(2),car3(2),car1(2)], colors(car_num))
+    x = [car1(1),car2(1),car4(1),car3(1)];
+    y = [car1(2),car2(2),car4(2),car3(2)];
+    fill(x,y,colors(car_num))

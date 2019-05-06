@@ -21,6 +21,12 @@ S = 1;
 % Time
 t = 0;
 
+% Safety constraint
+h = @(xi, xi_Bar, xj_Bar, i, j) ...
+	abs(xi_Bar - Cars{i}.sc(j)) + abs(xj_Bar - Cars{j}.sc(i)) - d_safe...
+	+ (xi_Bar - Cars{i}.sc(j))/abs(xi_Bar - Cars{i}.sc(j)) * (xi - xi_Bar);
+
+
 % Decentralized Problem
 while is_inside(Cars)
 	t = t+1;
@@ -70,7 +76,7 @@ while is_inside(Cars)
 				dt * sum(x(2,:)) >= Cars{i}.s_out - Cars{i}.x(1,end)];
 
 		% Collision Avoidance
-		for k=1:N
+		for k=2:N+1
 			% The first time of MPC doesn't add this constraint
 			if t==1
 				break
@@ -82,7 +88,8 @@ while is_inside(Cars)
 					d_ji = abs(s_last{j}(k) - Cars{j}.sc(i));
 					if d_ji<d_safe
 						constr = [constr,...
-							(x(1,k)-Cars{i}.sc(j))^2 >= (d_safe-d_ji)^2];
+							h(x(1,k), s_last{i}(k), s_last{j}(k), i, j) >= 0];
+							% (x(1,k)-Cars{i}.sc(j))^2 >= (d_safe-d_ji)^2];
 					end
 				end
 			end
@@ -102,6 +109,9 @@ while is_inside(Cars)
 
 	for i=1:3
 	    s_last{i} = xOpt{i}(1, 2:end);
+	    % Assume the same input, add the last element
+	    last_element = dyn_model(xOpt{i}(:, end), uOpt(end));
+	    s_last{i} = [s_last{i} last_element(1)];
 	end
 end
 

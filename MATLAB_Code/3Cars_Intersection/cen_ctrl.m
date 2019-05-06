@@ -4,7 +4,7 @@ clear
 Cars = car_init(3);
 plot_map()
 % Loop parameter
-M = 20;
+M = 30;
 % Horizon Length
 N = 20;
 

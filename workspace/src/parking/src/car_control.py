@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
+from std_msgs.msg import String
 from parking.msg import car_state, car_input, cost_map
 from parking.srv import maneuver
 import math
 import time
+import random
 import numpy as np
 
 # parameters
@@ -13,6 +15,9 @@ l_map  = rospy.get_param('l_map')
 
 # Lane width
 w_lane = rospy.get_param('w_lane')
+
+# The total amount of car
+total_number = rospy.get_param('total_number')
 
 class Vehicle(object):
 	"""docstring for Vehicle"""
@@ -263,9 +268,9 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	costmap = CostMap()
-
 	car_list = init_cars()
+
+	costmap = CostMap()
 
 	loop_rate = rospy.get_param('ctrl_rate')
 	rate = rospy.Rate(loop_rate)
@@ -308,95 +313,83 @@ def main():
 		# raw_input()
 
 def init_cars():
+	# Vacant spot
+	# Initially, all zero
+	# The shape of matrix is the same as parking lot
+	spots = np.zeros((2, 6), dtype=int)
 
 	car_list = []
 
-	t0   = 0
-	goal = -4.5
-	car = Vehicle(1, "U", t0, goal)
-	car.get_maneuver("U", "F")
+	t0 = 0
+	lane_string = ""
 
-	car_list.append(car)
+	for car_num in range(total_number):
+		# Generate the starting time,
+		# starting lane, and end_pose randomly
+		dt, lane, end_pose = random_start()
+		# Allocate the end spot for each car
+		goal, end_spot     = spot_allocate(spots, lane)
+		t0 += dt
+		# Initial each car object
+		car = Vehicle(car_num, lane, t0, goal)
+		car.get_maneuver(end_spot, end_pose)
 
-	t0   = 20
-	goal = -1.5
-	car = Vehicle(2, "L", t0, goal)
-	car.get_maneuver("L", "R")
+		car_list.append(car)
+		lane_string += lane
 
-	car_list.append(car)
-
-
-	t0   = 20
-	goal = -1.5
-	car = Vehicle(3, "U", t0, goal)
-	car.get_maneuver("U", "R")
-
-	car_list.append(car)
-
-	t0   = 30
-	goal = -7.5
-	car = Vehicle(4, "L", t0, goal)
-	car.get_maneuver("U", "F")
-
-	car_list.append(car)
-
-	t0   = 40
-	goal = 1.5
-	car = Vehicle(5, "L", t0, goal)
-	car.get_maneuver("L", "R")
-
-	car_list.append(car)
-
-	t0   = 30
-	goal = 1.5
-	car = Vehicle(6, "U", t0, goal)
-	car.get_maneuver("U", "F")
-
-	car_list.append(car)
-
-	t0   = 40
-	goal = 4.5
-	car = Vehicle(7, "U", t0, goal)
-	car.get_maneuver("U", "R")
-
-	car_list.append(car)
-
-	t0   = 50
-	goal = 4.5
-	car = Vehicle(8, "U", t0, goal)
-	car.get_maneuver("L", "F")
-
-	car_list.append(car)
-
-	t0   = 60
-	goal = -7.5
-	car = Vehicle(9, "U", t0, goal)
-	car.get_maneuver("L", "R")
-
-	car_list.append(car)
-
-	t0   = 50
-	goal = -4.5
-	car = Vehicle(10, "L", t0, goal)
-	car.get_maneuver("L", "F")
-
-	car_list.append(car)
-
-	t0   = 70
-	goal = -10.5
-	car = Vehicle(11, "U", t0, goal)
-	car.get_maneuver("U", "F")
-
-	car_list.append(car)
-
-	t0   = 60
-	goal = -10.5
-	car = Vehicle(12, "L", t0, goal)
-	car.get_maneuver("L", "R")
-
-	car_list.append(car)
+	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)
+	car_init_pub.publish(lane_string)
 
 	return car_list
+
+def random_start():
+	# The arrival time for car is randomly distributed
+	dt = random.randint(1,10)
+
+	# Choose the lane randomly
+	if random.random() >= 0.5:
+		lane = "U"
+	else:
+		lane = "L"
+
+	# Choose the end pose randomly
+	if random.random() >= 0.5:
+		end_pose = "F"
+	else:
+		end_pose = "R"
+
+	return dt, lane, end_pose
+
+def spot_allocate(spots, lane):
+	# The number of columns
+	length = spots.shape[1]
+
+	if lane == "U":
+		# The car is now at the upper lane
+		row_idx = 0
+		other_lane = "L"
+	else:
+		# The car is now at the lower lane
+		row_idx = 1
+		other_lane = "U"
+
+	# Check from the farest end to the closest
+	for col_idx in range(length-1, -1, -1):
+		# Firstly, check the current lane
+		if spots[row_idx, col_idx] == 0:
+			goal = col_idx * 3 - 10.5
+			spots[row_idx, col_idx] = 1
+			return goal, lane
+		# If occupied, check the other lane
+		elif spots[1-row_idx, col_idx] == 0:
+			goal = col_idx * 3 - 10.5
+			spots[1-row_idx, col_idx] = 1
+			return goal, other_lane
+
+	# If all spaces are occupied
+	print("There is no free space to allocate.")
+	return length * 3 - 10.5, lane
+
 
 if __name__ == '__main__':
 	try:

@@ -4,7 +4,12 @@ import rospy
 import matplotlib.pyplot as plt
 import numpy as np
 
+from std_msgs.msg import String
 from parking.msg import car_state, car_input, cost_map
+from car_control import Vehicle, CostMap
+
+# The total amount of car
+total_number = rospy.get_param('total_number')
 
 # Parameters
 ego = rospy.get_param('ego')
@@ -69,36 +74,19 @@ def car_box(x0,phi,w,l):
 
 # =============== End Car Box ==============
 
-class CarSubscriber(object):
+class CarSubscriber(Vehicle):
 	"""docstring for CarSubscriber"""
+	# Inherit from the Base Class "Vehicle"
 	# car_num is the integer value of car number
 	# lane = "U": Upper lane, start from [-l_map/2,  w_lane/2]
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	def __init__(self, car_num, lane):
-		super(CarSubscriber, self).__init__()
-		self.lane = lane
-		self.x     = -l_map/2
-		if self.lane == "U":
-			self.y =  w_lane/2
-		elif self.lane == "L":
-			self.y = -w_lane/2
-		else:
-			self.y = 0.0
-			print("The lane is not correctly specified")
-
-		self.psi   = 0.0
-		self.v     = 0.0
-		self.delta = 0.0
-		self.acc   = 0.0
+		# From Base Class
+		Vehicle.__init__(self, car_num, lane, 0, 0)
 
 		self.rest_park = car_state()
 		self.rest_park.x = []
 		self.rest_park.y = []
-
-		# Auto-create topic name for different cars
-		self.state_topicName = "state_%d" % car_num
-		self.input_topicName = "input_%d" % car_num
-		self.park_topicName  = "park_%d" % car_num
 
 		# Init subscriber
 		rospy.Subscriber(self.state_topicName, car_state, self.state_cb)
@@ -165,19 +153,11 @@ class CarSubscriber(object):
 		# plt.hold(False)
 		# plt.pause(0.001)
 
-class CostMapSubscriber(object):
+class CostMapSubscriber(CostMap):
 	"""docstring for CostMapSubscriber"""
+	# Inherit from the base class "CostMap"
 	def __init__(self):
-		super(CostMapSubscriber, self).__init__()
-		gridsize = rospy.get_param('gridsize')
-		cmap_len = rospy.get_param('cmap_len')
-		cmap_wid = rospy.get_param('cmap_wid')
-		self.xgrid    = range(-cmap_len/2, cmap_len/2+1, gridsize)
-		self.ygrid    = range(-cmap_wid/2, cmap_wid/2+1, gridsize)
-
-		self.length   = len(self.xgrid)
-		self.width    = len(self.ygrid)
-		self.time     = 0
+		CostMap.__init__(self)
 
 		self.X, self.Y = np.meshgrid(self.xgrid, self.ygrid)
 		self.cost     = np.zeros((self.width, self.length))
@@ -205,12 +185,37 @@ class CostMapSubscriber(object):
 	def plot_costmap(self):
 		plt.pcolormesh(self.X, self.Y, self.cost, alpha=0.5)
 
+class Simulator(object):
+	"""docstring for Simulator"""
+	def __init__(self, total_number):
+		super(Simulator, self).__init__()
+		self.plotter_list = []
+		self.total_number = total_number
+
+		rospy.Subscriber('car_init', String, self.init_cb)
+
+	def init_cb(self, data):
+		self.car_lanes = data.data
+
+		for car_num in range(self.total_number):
+			plotter = CarSubscriber(car_num, self.car_lanes[car_num])
+			self.plotter_list.append(plotter)
+	
+	def plot_update(self):
+		for plotter in self.plotter_list:
+			plt.hold(True)
+			# Plot the parking maneuver
+			plotter.plot_park()
+			# Plot the car body
+			plotter.plot_car()
+			plt.hold(False)
+
 def main():
 
 	# Subscriber Initialization
 	rospy.init_node('plotCar', anonymous=True)
 
-	plotter_list = init_cars()
+	car_simulator = Simulator(total_number)
 
 	costmap = CostMapSubscriber()
 
@@ -221,60 +226,12 @@ def main():
 		plot_map()
 
 		costmap.plot_costmap()
-		
-		for plotter in plotter_list:
-			plt.hold(True)
-			# Plot the parking maneuver
-			plotter.plot_park()
-			# Plot the car body
-			plotter.plot_car()
-			plt.hold(False)
+
+		car_simulator.plot_update()
 
 		plt.pause(0.0001)
 
 		rate.sleep()
-
-def init_cars():
-
-	plotter_list = []
-
-	plotter = CarSubscriber(1, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(2, "L")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(3, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(4, "L")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(5, "L")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(6, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(7, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(8, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(9, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(10, "L")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(11, "U")
-	plotter_list.append(plotter)
-
-	plotter = CarSubscriber(12, "L")
-	plotter_list.append(plotter)
-
-	return plotter_list
 
 if __name__ == '__main__':
 	try:

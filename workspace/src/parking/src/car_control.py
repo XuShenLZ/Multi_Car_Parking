@@ -274,7 +274,7 @@ def main():
 
 	# print(os.getcwd())
 
-	is_random = True
+	is_random = False
 
 	car_list = init_cars(is_random)
 

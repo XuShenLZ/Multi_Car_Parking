@@ -9,6 +9,9 @@ import time
 import random
 import numpy as np
 
+import pickle
+import os
+
 # parameters
 # The length of the map
 l_map  = rospy.get_param('l_map')
@@ -48,7 +51,7 @@ class Vehicle(object):
 		self.pIdx = 0
 
 		# State of the car
-		self.x     = -l_map/2
+		self.x     = -l_map/2 - self.car_num * 2
 		if self.lane == "U":
 			self.y =  w_lane/2
 		elif self.lane == "L":
@@ -172,7 +175,7 @@ class Vehicle(object):
 
 		if not self.is_parking():
 			# Only need to see front if going straight
-			for l in range(2,7):
+			for l in range(3,7):
 				for j in range(-1,2):
 					check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
 					check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
@@ -260,7 +263,7 @@ class CostMap(object):
 		if self.cost.has_key((int(x_floor), int(y_floor))):
 			return self.cost[(int(x_floor), int(y_floor))]
 		else:
-			print("Detection is out of costmap range")
+			# print("Detection is out of costmap range")
 			return (0, 0)
 	
 def main():
@@ -268,7 +271,11 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	car_list = init_cars()
+	# print(os.getcwd())
+
+	is_random = False
+
+	car_list = init_cars(is_random)
 
 	costmap = CostMap()
 
@@ -312,7 +319,8 @@ def main():
 		rate.sleep()
 		# raw_input()
 
-def init_cars():
+def init_cars(is_random):
+	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)
 	# Vacant spot
 	# Initially, all zero
 	# The shape of matrix is the same as parking lot
@@ -323,21 +331,51 @@ def init_cars():
 	t0 = 0
 	lane_string = ""
 
-	for car_num in range(total_number):
-		# Generate the starting time,
-		# starting lane, and end_pose randomly
-		dt, lane, end_pose = random_start()
-		# Allocate the end spot for each car
-		goal, end_spot     = spot_allocate(spots, lane)
-		t0 += dt
-		# Initial each car object
-		car = Vehicle(car_num, lane, t0, goal)
-		car.get_maneuver(end_spot, end_pose)
+	if is_random:
+		# If the initialization is done by random
+		t0_list       = []
+		lane_list     = []
+		end_pose_list = []
+		goal_list     = []
+		end_spot_list = []
 
-		car_list.append(car)
-		lane_string += lane
+		for car_num in range(total_number):
+			# Generate the starting time,
+			# starting lane, and end_pose randomly
+			dt, lane, end_pose = random_start()
+			# Allocate the end spot for each car
+			goal, end_spot = spot_allocate(spots, lane)
+			t0 += dt
 
-	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)
+			# Initial each car object
+			car = Vehicle(car_num, lane, t0, goal)
+			car.get_maneuver(end_spot, end_pose)
+
+			car_list.append(car)
+			lane_string += lane
+
+			t0_list.append(t0)
+			lane_list.append(lane)
+			end_pose_list.append(end_pose)
+			goal_list.append(goal)
+			end_spot_list.append(end_spot)
+
+		# Save the variables
+		with open('init_data.pickle', 'w') as f:
+			pickle.dump([t0_list, lane_list, end_pose_list, goal_list, end_spot_list], f)
+	else:
+		# If we need to recover the last settings
+		with open('init_data.pickle') as f:
+			t0_list, lane_list, end_pose_list, goal_list, end_spot_list = pickle.load(f)
+
+		for car_num in range(total_number):
+			# Initial each car object
+			car = Vehicle(car_num, lane_list[car_num], t0_list[car_num], goal_list[car_num])
+			car.get_maneuver(end_spot_list[car_num], end_pose_list[car_num])
+
+			car_list.append(car)
+			lane_string += lane_list[car_num]
+
 	car_init_pub.publish(lane_string)
 
 	return car_list
@@ -349,7 +387,7 @@ def random_start():
 	# Choose the lane randomly
 	if random.random() >= 0.5:
 		lane = "U"
-	else:
+	else: 
 		lane = "L"
 
 	# Choose the end pose randomly

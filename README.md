@@ -5,6 +5,7 @@ Multi Car and High Density Parking Coodination
 ### 05/12/2019
 Back to ROS
 1. Changed the initialization as randomized. The starting time, the lane and end pose are all chosen randomly. The end spot is chosen from the farest end to nearest.
+2. The random parameters can be saved and reloaded to recover the last experiment.
 
 ### 04/25/2019
 1. In MATLAB, implemented the algorithm in reference[2] about intersection conflict resolution. 

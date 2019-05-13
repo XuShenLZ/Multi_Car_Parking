@@ -198,6 +198,7 @@ class Simulator(object):
 		self.car_lanes = data.data
 
 		for car_num in range(self.total_number):
+			# Initialize each car object
 			plotter = CarSubscriber(car_num, self.car_lanes[car_num])
 			self.plotter_list.append(plotter)
 	
@@ -228,6 +229,7 @@ def main():
 		costmap.plot_costmap()
 
 		car_simulator.plot_update()
+		plt.hold(False)
 
 		plt.pause(0.0001)
 

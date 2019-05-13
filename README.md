@@ -2,6 +2,9 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 05/13/2019
+1. Instead of parallelly making collision free decision, now the vehicles have their priorities. The first car in the queue has the highest priority. The collision check only exists when considering other higher-priority counterparts.
+
 ### 05/12/2019
 Back to ROS
 1. Changed the initialization as randomized. The starting time, the lane and end pose are all chosen randomly. The end spot is chosen from the farest end to nearest.

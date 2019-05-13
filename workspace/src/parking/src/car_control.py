@@ -11,6 +11,7 @@ import numpy as np
 
 import pickle
 import os
+import ipdb
 
 # parameters
 # The length of the map
@@ -51,7 +52,7 @@ class Vehicle(object):
 		self.pIdx = 0
 
 		# State of the car
-		self.x     = -l_map/2 - self.car_num * 2
+		self.x     = -l_map/2 - self.car_num * 3
 		if self.lane == "U":
 			self.y =  w_lane/2
 		elif self.lane == "L":
@@ -175,7 +176,7 @@ class Vehicle(object):
 
 		if not self.is_parking():
 			# Only need to see front if going straight
-			for l in range(3,7):
+			for l in range(3,8):
 				for j in range(-1,2):
 					check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
 					check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
@@ -273,7 +274,7 @@ def main():
 
 	# print(os.getcwd())
 
-	is_random = False
+	is_random = True
 
 	car_list = init_cars(is_random)
 
@@ -283,22 +284,27 @@ def main():
 	rate = rospy.Rate(loop_rate)
 	while not rospy.is_shutdown():
 
-		for car in car_list:
+		# for car in car_list:
+		for car_idx in range(total_number):
+			car = car_list[car_idx]
 			# Update Map
 			costmap.reset_map()
 
 			# Register the current positions of all cars
-			for car0 in car_list:
+			# Only concern the cars that have higher priority
+			for car0 in car_list[0:car_idx]:
 				if not car0.is_terminated():
 					state = car0.get_state()
 					costmap.write_cost(state.x, state.y, state.psi, state.car_num)
 
 			# Register the collision-free parking maneuver
-			for car0 in car_list:
+			# Only concern the cars that have higher priority
+			for car0 in car_list[0:car_idx]:
 				if not car0.is_terminated():
 					if car0.not_collide(costmap):
 						if car0.is_parking():
 							costmap.write_cost_maneuver(car0)
+
 
 			costmap.pub_costmap()
 
@@ -328,7 +334,8 @@ def init_cars(is_random):
 
 	car_list = []
 
-	t0 = 0
+	t0_U = 0
+	t0_L = 0
 	lane_string = ""
 
 	if is_random:
@@ -345,7 +352,12 @@ def init_cars(is_random):
 			dt, lane, end_pose = random_start()
 			# Allocate the end spot for each car
 			goal, end_spot = spot_allocate(spots, lane)
-			t0 += dt
+			if lane == "U":
+				t0_U += dt
+				t0 = t0_U
+			else:
+				t0_L += dt
+				t0 = t0_L
 
 			# Initial each car object
 			car = Vehicle(car_num, lane, t0, goal)
@@ -362,11 +374,14 @@ def init_cars(is_random):
 
 		# Save the variables
 		with open('init_data.pickle', 'w') as f:
-			pickle.dump([t0_list, lane_list, end_pose_list, goal_list, end_spot_list], f)
+			pickle.dump([t0_list, lane_list, \
+						end_pose_list, goal_list, \
+						end_spot_list], f)
 	else:
 		# If we need to recover the last settings
 		with open('init_data.pickle') as f:
-			t0_list, lane_list, end_pose_list, goal_list, end_spot_list = pickle.load(f)
+			t0_list, lane_list, end_pose_list, \
+				goal_list, end_spot_list = pickle.load(f)
 
 		for car_num in range(total_number):
 			# Initial each car object

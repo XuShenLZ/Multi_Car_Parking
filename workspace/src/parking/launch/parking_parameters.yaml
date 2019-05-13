@@ -9,7 +9,9 @@ manual_choice: false
 
 # ========== Parameters for parking lot ===========
 # Length of the parking lot
-l_map:  24.0
+# Width of the uppder/lower section
+l_map:  66.0
+w_map:  16.0
 # Lane width
 w_lane: 3.0
 # Spot width and length
@@ -29,6 +31,6 @@ L:   2.7
 
 # ========== Parameters for cost map ===========
 # Currently only integer and grid size 1 is allowed
-cmap_len: 24
+cmap_len: 66
 cmap_wid: 16
 gridsize: 1

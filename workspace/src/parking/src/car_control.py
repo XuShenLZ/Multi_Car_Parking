@@ -10,12 +10,12 @@ import random
 import numpy as np
 
 import pickle
-import os
 import ipdb
 
 # parameters
 # The length of the map
 l_map  = rospy.get_param('l_map')
+w_map  = rospy.get_param('w_map')
 
 # Lane width
 w_lane = rospy.get_param('w_lane')
@@ -60,6 +60,8 @@ class Vehicle(object):
 		else:
 			self.y = 0
 			print("The lane is not correctly specified")
+		# The longitudinal state for circular motion
+		self.s     = self.x
 
 		self.psi   = 0
 		self.v     = 0.0
@@ -108,10 +110,8 @@ class Vehicle(object):
 			self.t += 1
 			return
 
-		# After the car reached the departure time
-
-		# goal is the x value of parking starting point
-		if self.goal - self.x >= 0.05:
+		# goal is the s value of parking starting point
+		if self.goal[2] - self.s >= 0.05:
 			# If far away, keep going
 			self.v = 4.0
 			self.parking = False
@@ -119,19 +119,59 @@ class Vehicle(object):
 			# If arrived, stop
 			self.v = 0.0
 			self.parking = True
+			return
+		
 		# State evolve
-		self.x = self.x + self.dt * self.v
+		self.s += self.dt * self.v
+
+		if self.lane == "U":
+			R = (w_map - w_lane) / 2
+		else:
+			R = (w_map + w_lane) / 2
+		arc = math.pi*R
+
+		# If in the lower half
+		if self.s <= l_map/2:
+			self.x = self.s
+			if self.lane == "U":
+				self.y =  w_lane/2
+			else:
+				self.y = -w_lane/2
+			self.psi   = 0
+		# If along the circle
+		elif self.s > l_map/2 and self.s < l_map/2 + arc:
+			angle = self.s / arc
+			self.x   = l_map/2 + R * math.sin(angle)
+			self.y   = w_map/2 - R * math.cos(angle)
+			self.psi = angle
+		# If in the upper half
+		elif self.s >= l_map/2 + arc:
+			self.x = 2*l_map + arc - self.s
+			if self.lane == "U":
+				self.y = w_map - w_lane/2
+			else:
+				self.y = w_map + w_lane/2
+			self.psi   = math.pi
 
 		self.publish_state()
 
 	def drive_parking(self):
 		# Calculate the offset for current starting position
-		offset = self.goal - self.maneuver_data.path.x[0]
+		offset    = [0, 0, 0]
+		offset[0] = self.goal[0] - self.maneuver_data.path.x[0]
+		# If on the upper half
+		if self.goal[1] >= w_map/2:
+			offset[1] = self.goal[1] - self.maneuver_data.path.y[0]
+			offset[2] = math.pi
+		# If on the lower half
+		else:
+			offset[1] = 0
+			offset[2] = 0
 
 		i = self.pIdx
-		self.x     = self.maneuver_data.path.x[i] + offset
-		self.y     = self.maneuver_data.path.y[i]
-		self.psi   = self.maneuver_data.path.psi[i]
+		self.x     = self.maneuver_data.path.x[i] + offset[0]
+		self.y     = self.maneuver_data.path.y[i] + offset[1]
+		self.psi   = self.maneuver_data.path.psi[i] + offset[2]
 		self.v     = self.maneuver_data.path.v[i]
 		self.delta = self.maneuver_data.input.delta[i]
 		self.acc   = self.maneuver_data.input.acc[i]
@@ -147,13 +187,23 @@ class Vehicle(object):
 
 	def get_restpark(self):
 		# Return the rest of parking maneuver
-		offset = self.goal - self.maneuver_data.path.x[0]
+		offset    = [0, 0, 0]
+		offset[0] = self.goal[0] - self.maneuver_data.path.x[0]
+		# If on the upper half
+		if self.goal[1] >= w_map/2:
+			offset[1] = self.goal[1] - self.maneuver_data.path.y[0]
+			offset[2] = math.pi
+		# If on the lower half
+		else:
+			offset[1] = 0
+			offset[2] = 0
+
 		end_idx = len(self.maneuver_data.path.x)
 
 		rest_park     = car_state()
-		rest_park.x   = np.array(self.maneuver_data.path.x[self.pIdx:end_idx]) + offset
-		rest_park.y   = np.array(self.maneuver_data.path.y[self.pIdx:end_idx])
-		rest_park.psi = np.array(self.maneuver_data.path.psi[self.pIdx:end_idx])
+		rest_park.x   = np.array(self.maneuver_data.path.x[self.pIdx:end_idx]) + offset[0]
+		rest_park.y   = np.array(self.maneuver_data.path.y[self.pIdx:end_idx]) + offset[1]
+		rest_park.psi = np.array(self.maneuver_data.path.psi[self.pIdx:end_idx]) + offset[2]
 		self.maneuver_pub.publish(rest_park)
 		return rest_park
 
@@ -206,8 +256,8 @@ class CostMap(object):
 		gridsize = rospy.get_param('gridsize')
 		cmap_len = rospy.get_param('cmap_len')
 		cmap_wid = rospy.get_param('cmap_wid')
-		self.xgrid    = range(-cmap_len/2, cmap_len/2+1, gridsize)
-		self.ygrid    = range(-cmap_wid/2, cmap_wid/2+1, gridsize)
+		self.xgrid    = range(-cmap_len/2,   cmap_len/2+1, gridsize)
+		self.ygrid    = range(-cmap_wid/2, cmap_wid*3/2+1, gridsize)
 		self.length   = len(self.xgrid)
 		self.width    = len(self.ygrid)
 		self.time     = 0
@@ -272,11 +322,10 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	# print(os.getcwd())
-
-	is_random = False
+	is_random = True
 
 	car_list = init_cars(is_random)
+	# ipdb.set_trace()
 
 	costmap = CostMap()
 
@@ -426,16 +475,27 @@ def spot_allocate(spots, lane):
 		row_idx = 1
 		other_lane = "U"
 
+	goal = [0,0,0]
 	# Check from the farest end to the closest
 	for col_idx in range(length-1, -1, -1):
 		# Firstly, check the current lane
 		if spots[row_idx, col_idx] == 0:
-			goal = col_idx * 3 - 10.5
+			goal[0] = col_idx * 3 - 10.5
+			if lane == "U":
+				goal[1] = w_lane/2
+			else:
+				goal[1] = -w_lane/2
+			goal[2] = goal[0]
 			spots[row_idx, col_idx] = 1
 			return goal, lane
 		# If occupied, check the other lane
 		elif spots[1-row_idx, col_idx] == 0:
-			goal = col_idx * 3 - 10.5
+			goal[0] = col_idx * 3 - 10.5
+			if lane == "U":
+				goal[1] = -w_lane/2
+			else:
+				goal[1] = w_lane/2
+			goal[2] = goal[0]
 			spots[1-row_idx, col_idx] = 1
 			return goal, other_lane
 

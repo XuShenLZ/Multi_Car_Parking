@@ -17,6 +17,8 @@ L   = rospy.get_param('L')
 
 # The length of the map
 l_map  = rospy.get_param('l_map')
+# The width of the hald paft
+w_map  = rospy.get_param('w_map')
 
 # Lane width
 w_lane = rospy.get_param('w_lane')
@@ -37,6 +39,22 @@ def plot_map():
 	# Interactive mode
 	plt.ion()
 
+	########## Upper part ############
+	# Lower Boundary
+	plt.plot([-l_map/2, l_map/2], [-w_lane-l_spot+w_map, -w_lane-l_spot+w_map], 'k', linewidth=3.0)
+	plt.hold(True)
+	# Upper Boundary
+	plt.plot([-l_map/2, l_map/2], [ w_lane+l_spot+w_map,  w_lane+l_spot+w_map], 'k', linewidth=3.0)
+
+	# Center line
+	plt.plot([-l_map/2, l_map/2], [0+w_map, 0+w_map], '--k', linewidth=2.0)
+
+	# Slot boundaries
+	for i in range(0, int(l_map/w_spot) + 1):
+		plt.plot([-l_map/2 + i*w_spot, -l_map/2 + i*w_spot], [-w_lane-l_spot+w_map, -w_lane+w_map], 'k', linewidth=3.0)
+		plt.plot([-l_map/2 + i*w_spot, -l_map/2 + i*w_spot], [ w_lane+w_map,  w_lane+l_spot+w_map], 'k', linewidth=3.0)
+
+	########## Lower part ############
 	# Lower Boundary
 	plt.plot([-l_map/2, l_map/2], [-w_lane-l_spot, -w_lane-l_spot], 'k', linewidth=3.0)
 	plt.hold(True)
@@ -51,6 +69,7 @@ def plot_map():
 		plt.plot([-l_map/2 + i*w_spot, -l_map/2 + i*w_spot], [-w_lane-l_spot, -w_lane], 'k', linewidth=3.0)
 		plt.plot([-l_map/2 + i*w_spot, -l_map/2 + i*w_spot], [ w_lane,  w_lane+l_spot], 'k', linewidth=3.0)
 
+	###############
 	# Plot properties
 	plt.axis('equal')
 	# plt.xlim(-20, 20)
@@ -69,7 +88,7 @@ def car_box(x0,phi,w,l):
 	car3 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) + np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car4 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) - np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	plt.plot([car1[0],car2[0],car4[0],car3[0],car1[0]],[car1[1],car2[1],car4[1],car3[1],car1[1]],'b', linewidth=2.0)
-	plt.xlim(-15, 15)
+	plt.xlim(-40, 40)
 	# plt.draw()
 
 # =============== End Car Box ==============

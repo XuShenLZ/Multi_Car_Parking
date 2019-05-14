@@ -20,6 +20,9 @@ w_map  = rospy.get_param('w_map')
 # Lane width
 w_lane = rospy.get_param('w_lane')
 
+# Spot width
+w_spot = rospy.get_param('w_spot')
+
 # The total amount of car
 total_number = rospy.get_param('total_number')
 
@@ -55,8 +58,12 @@ class Vehicle(object):
 		self.x     = -l_map/2 - self.car_num * 3
 		if self.lane == "U":
 			self.y =  w_lane/2
+			self.R =  w_spot
+			self.arc = (w_map - w_lane) + self.R
 		elif self.lane == "L":
 			self.y = -w_lane/2
+			self.R =  2*w_spot
+			self.arc = (w_map + w_lane) + self.R
 		else:
 			self.y = 0
 			print("The lane is not correctly specified")
@@ -124,14 +131,8 @@ class Vehicle(object):
 		# State evolve
 		self.s += self.dt * self.v
 
-		if self.lane == "U":
-			R = (w_map - w_lane) / 2
-		else:
-			R = (w_map + w_lane) / 2
-		arc = math.pi*R
-
 		# If in the lower half
-		if self.s <= l_map/2:
+		if self.s <= l_map/2 + self.R:
 			self.x = self.s
 			if self.lane == "U":
 				self.y =  w_lane/2
@@ -139,14 +140,18 @@ class Vehicle(object):
 				self.y = -w_lane/2
 			self.psi   = 0
 		# If along the circle
-		elif self.s > l_map/2 and self.s < l_map/2 + arc:
-			angle = self.s / arc
-			self.x   = l_map/2 + R * math.sin(angle)
-			self.y   = w_map/2 - R * math.cos(angle)
-			self.psi = angle
+		elif self.s > l_map/2 + self.R and self.s < l_map/2 + self.arc:
+			# angle = (self.s - l_map/2) / arc * math.pi
+			# self.x   = l_map/2 + R * math.sin(angle)
+			# self.y   = w_map/2 - R * math.cos(angle)
+			# self.psi = angle
+			self.x   = l_map/2 + self.R
+			self.y   = w_map/2 - (self.arc-self.R)/2 + self.s - (l_map/2 + self.R)
+			self.psi = math.pi/2
+
 		# If in the upper half
-		elif self.s >= l_map/2 + arc:
-			self.x = 2*l_map + arc - self.s
+		elif self.s >= l_map/2 + self.arc:
+			self.x = l_map/2 + self.R - (self.s - self.arc - l_map/2)
 			if self.lane == "U":
 				self.y = w_map - w_lane/2
 			else:
@@ -215,6 +220,10 @@ class Vehicle(object):
 			maneuver_client = rospy.ServiceProxy('park_maneuver', maneuver)
 			self.maneuver_data = maneuver_client(self.lane, end_spot, end_pose)
 
+			if self.goal[1] >= w_map/2:
+				self.maneuver_data.path.x = [-i for i in self.maneuver_data.path.x]
+				self.maneuver_data.path.y = [-i for i in self.maneuver_data.path.y]
+
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 
@@ -225,14 +234,24 @@ class Vehicle(object):
 	def not_collide(self, costmap):
 
 		if not self.is_parking():
+			# If During the turn
+			# if self.s >= l_map/2 + self.R and self.s <= l_map/2 + self.arc:
+			# 	for l in range(3,8):
+			# 		for j in range(-1,2):
+			# 			check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
+			# 			check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
+			# 			cost = costmap.get_cost(check_x, check_y)
+			# 			if cost[0] != 0 and cost[1] != self.car_num:
+			# 				return False
+			# else:
 			# Only need to see front if going straight
-			for l in range(3,8):
-				for j in range(-1,2):
-					check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
-					check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
-					cost = costmap.get_cost(check_x, check_y)
-					if cost[0] != 0 and cost[1] != self.car_num:
-						return False
+				for l in range(3,8):
+					for j in range(-1,2):
+						check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
+						check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
+						cost = costmap.get_cost(check_x, check_y)
+						if cost[0] != 0 and cost[1] != self.car_num:
+							return False
 		else:
 			# Only need to check along the parking trajectory
 			rest_maneuver = self.get_restpark()
@@ -256,7 +275,7 @@ class CostMap(object):
 		gridsize = rospy.get_param('gridsize')
 		cmap_len = rospy.get_param('cmap_len')
 		cmap_wid = rospy.get_param('cmap_wid')
-		self.xgrid    = range(-cmap_len/2,   cmap_len/2+1, gridsize)
+		self.xgrid    = range(-cmap_len/2,   cmap_len/2+3*int(w_spot)+1, gridsize)
 		self.ygrid    = range(-cmap_wid/2, cmap_wid*3/2+1, gridsize)
 		self.length   = len(self.xgrid)
 		self.width    = len(self.ygrid)
@@ -323,6 +342,7 @@ def main():
 	rospy.init_node("carNode", anonymous=True)
 
 	is_random = True
+	# is_random = False
 
 	car_list = init_cars(is_random)
 	# ipdb.set_trace()
@@ -379,7 +399,25 @@ def init_cars(is_random):
 	# Vacant spot
 	# Initially, all zero
 	# The shape of matrix is the same as parking lot
-	spots = np.zeros((2, 6), dtype=int)
+	spots_U = np.zeros((2, 22), dtype=int)
+
+	occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
+	for x in occupied:
+		spots_U[0, x] = 1
+
+	occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
+	for x in occupied:
+		spots_U[1, x] = 1
+
+	spots_L = np.zeros((2, 22), dtype=int)
+
+	occupied = [0, 2, 5, 6, 8, 12, 14, 15]
+	for x in occupied:
+		spots_L[0, x] = 1
+
+	occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
+	for x in occupied:
+		spots_L[1, x] = 1
 
 	car_list = []
 
@@ -400,7 +438,7 @@ def init_cars(is_random):
 			# starting lane, and end_pose randomly
 			dt, lane, end_pose = random_start()
 			# Allocate the end spot for each car
-			goal, end_spot = spot_allocate(spots, lane)
+			goal, end_spot = spot_allocate(spots_U, spots_L, lane)
 			if lane == "U":
 				t0_U += dt
 				t0 = t0_U
@@ -462,9 +500,9 @@ def random_start():
 
 	return dt, lane, end_pose
 
-def spot_allocate(spots, lane):
+def spot_allocate(spots_U, spots_L, lane):
 	# The number of columns
-	length = spots.shape[1]
+	length = spots_L.shape[1]
 
 	if lane == "U":
 		# The car is now at the upper lane
@@ -476,27 +514,69 @@ def spot_allocate(spots, lane):
 		other_lane = "U"
 
 	goal = [0,0,0]
+
+	# Check from the upper part first
 	# Check from the farest end to the closest
-	for col_idx in range(length-1, -1, -1):
+	for col_idx in range(length):
 		# Firstly, check the current lane
-		if spots[row_idx, col_idx] == 0:
-			goal[0] = col_idx * 3 - 10.5
+		if spots_U[1-row_idx, col_idx] == 0:
+			goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
+
 			if lane == "U":
-				goal[1] = w_lane/2
+				goal[1] = -w_lane/2 + w_map
+				R = w_spot
+				arc = (w_map - w_lane) + R
 			else:
-				goal[1] = -w_lane/2
-			goal[2] = goal[0]
-			spots[row_idx, col_idx] = 1
+				goal[1] =  w_lane/2 + w_map
+				R = 2*w_spot
+				arc = (w_map + w_lane) + R
+			
+			# arc = math.pi*R
+
+			goal[2] = l_map + arc + R - goal[0]
+			spots_U[1-row_idx, col_idx] = 1
 			return goal, lane
 		# If occupied, check the other lane
-		elif spots[1-row_idx, col_idx] == 0:
-			goal[0] = col_idx * 3 - 10.5
+		elif spots_U[row_idx, col_idx] == 0:
+			goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
+			if lane == "U":
+				goal[1] = -w_lane/2 + w_map
+				R = w_spot
+				arc = (w_map - w_lane) + R
+			else:
+				goal[1] =  w_lane/2 + w_map
+				R = 2*w_spot
+				arc = (w_map + w_lane) + R
+			
+			# arc = math.pi*R
+			# arc = 4*R
+
+			goal[2] = l_map + arc + R - goal[0]
+			spots_U[row_idx, col_idx] = 1
+			return goal, other_lane
+
+	# Then from the lower part
+	# Check from the farest end to the closest
+	for col_idx in range(length-1, 1, -1):
+		# Firstly, check the current lane
+		if spots_L[row_idx, col_idx] == 0:
+			goal[0] = col_idx * 3 - l_map/2 - 2.5*w_spot
+			if lane == "U":
+				goal[1] = w_lane/2
+			else:
+				goal[1] = -w_lane/2
+			goal[2] = goal[0]
+			spots_L[row_idx, col_idx] = 1
+			return goal, lane
+		# If occupied, check the other lane
+		elif spots_L[1-row_idx, col_idx] == 0:
+			goal[0] = col_idx * 3 - l_map/2 - 2.5*w_spot
 			if lane == "U":
 				goal[1] = -w_lane/2
 			else:
 				goal[1] = w_lane/2
 			goal[2] = goal[0]
-			spots[1-row_idx, col_idx] = 1
+			spots_L[1-row_idx, col_idx] = 1
 			return goal, other_lane
 
 	# If all spaces are occupied

@@ -5,6 +5,7 @@ Multi Car and High Density Parking Coodination
 ### 05/13/2019
 1. Instead of parallelly making collision free decision, now the vehicles have their priorities. The first car in the queue has the highest priority. The collision check only exists when considering other higher-priority counterparts.
 2. **[large-map branch]** Constructed a larger map and rewrote the dynamics and maneuver offsets.
+3. **[large-map branch]** The larger map works and the corresponding maneuvers are also shifted.
 
 ### 05/12/2019
 Back to ROS

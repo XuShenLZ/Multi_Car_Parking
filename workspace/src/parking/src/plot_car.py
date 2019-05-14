@@ -3,6 +3,7 @@
 import rospy
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
 from std_msgs.msg import String
 from parking.msg import car_state, car_input, cost_map
@@ -33,6 +34,26 @@ L_ev = ego[0]+ego[2]
 
 w = W_ev/2;
 offset = np.array([L_ev/2 - ego[2], 0])
+
+spots_U = np.zeros((2, 22), dtype=int)
+
+occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
+for x in occupied:
+	spots_U[0, x] = 1
+
+occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
+for x in occupied:
+	spots_U[1, x] = 1
+
+spots_L = np.zeros((2, 22), dtype=int)
+
+occupied = [0, 2, 5, 6, 8, 12, 14, 15]
+for x in occupied:
+	spots_L[0, x] = 1
+
+occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
+for x in occupied:
+	spots_L[1, x] = 1
 
 # =============== MAP Plotting ===============
 def plot_map():
@@ -69,6 +90,31 @@ def plot_map():
 		plt.plot([-l_map/2 + i*w_spot, -l_map/2 + i*w_spot], [-w_lane-l_spot, -w_lane], 'k', linewidth=3.0)
 		plt.plot([-l_map/2 + i*w_spot, -l_map/2 + i*w_spot], [ w_lane,  w_lane+l_spot], 'k', linewidth=3.0)
 
+	########## Right Part ############
+	plt.plot([l_map/2, l_map/2+3*w_spot], [-w_lane-l_spot, -w_lane-l_spot], 'k', linewidth=3.0)
+	plt.plot([l_map/2+3*w_spot, l_map/2+3*w_spot], [-w_lane-l_spot, w_lane+l_spot+w_map], 'k', linewidth=3.0)
+	plt.plot([l_map/2, l_map/2+3*w_spot], [w_lane+l_spot+w_map, w_lane+l_spot+w_map], 'k', linewidth=3.0)
+
+	########## Steady Vehicles ###########
+	length = spots_L.shape[1]
+	for x in range(length):
+		if spots_U[0, x] == 1:
+			centerCar = [(x+0.5)*w_spot-l_map/2, 1.5*w_map - 0.5*l_spot]
+			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+
+		if spots_U[1, x] == 1:
+			centerCar = [(x+0.5)*w_spot-l_map/2, w_map/2 + 0.5*l_spot]
+			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+
+		if spots_L[0, x] == 1:
+			centerCar = [(x+0.5)*w_spot-l_map/2, w_map/2 - 0.5*l_spot]
+			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+
+		if spots_L[1, x] == 1:
+			centerCar = [(x+0.5)*w_spot-l_map/2, -w_map/2 + 0.5*l_spot]
+			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+
+
 	###############
 	# Plot properties
 	plt.axis('equal')
@@ -82,13 +128,13 @@ def plot_map():
 # =============== End MAP Plotting ===============
 
 # =============== Plot Car Box ==============
-def car_box(x0,phi,w,l):
+def car_box(x0,phi,w,l, color='b'):
 	car1 = x0 + np.array([np.cos(phi)*l, np.sin(phi)*l]) + np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car2 = x0 + np.array([np.cos(phi)*l, np.sin(phi)*l]) - np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car3 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) + np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	car4 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) - np.array([np.sin(phi)*w, -np.cos(phi)*w])
-	plt.plot([car1[0],car2[0],car4[0],car3[0],car1[0]],[car1[1],car2[1],car4[1],car3[1],car1[1]],'b', linewidth=2.0)
-	plt.xlim(-40, 40)
+	plt.plot([car1[0],car2[0],car4[0],car3[0],car1[0]],[car1[1],car2[1],car4[1],car3[1],car1[1]],color, linewidth=2.0)
+	plt.xlim(-40, 50)
 	# plt.draw()
 
 # =============== End Car Box ==============

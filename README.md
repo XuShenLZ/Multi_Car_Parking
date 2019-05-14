@@ -2,6 +2,9 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 05/14/2019
+1. **[large-map branch]** Fixed some bugs in allocation and now 44 cars can park. The hold simulation need about 30mins on the Thinkpad Desktop.
+
 ### 05/13/2019
 1. Instead of parallelly making collision free decision, now the vehicles have their priorities. The first car in the queue has the highest priority. The collision check only exists when considering other higher-priority counterparts.
 2. **[large-map branch]** Constructed a larger map and rewrote the dynamics and maneuver offsets.

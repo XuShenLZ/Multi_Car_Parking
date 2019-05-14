@@ -341,8 +341,8 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	is_random = True
-	# is_random = False
+	# is_random = True
+	is_random = False
 
 	car_list = init_cars(is_random)
 	# ipdb.set_trace()
@@ -438,6 +438,7 @@ def init_cars(is_random):
 			# starting lane, and end_pose randomly
 			dt, lane, end_pose = random_start()
 			# Allocate the end spot for each car
+			print(car_num)
 			goal, end_spot = spot_allocate(spots_U, spots_L, lane)
 			if lane == "U":
 				t0_U += dt
@@ -557,10 +558,10 @@ def spot_allocate(spots_U, spots_L, lane):
 
 	# Then from the lower part
 	# Check from the farest end to the closest
-	for col_idx in range(length-1, 1, -1):
+	for col_idx in range(length-1, -1, -1):
 		# Firstly, check the current lane
 		if spots_L[row_idx, col_idx] == 0:
-			goal[0] = col_idx * 3 - l_map/2 - 2.5*w_spot
+			goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
 			if lane == "U":
 				goal[1] = w_lane/2
 			else:
@@ -570,7 +571,7 @@ def spot_allocate(spots_U, spots_L, lane):
 			return goal, lane
 		# If occupied, check the other lane
 		elif spots_L[1-row_idx, col_idx] == 0:
-			goal[0] = col_idx * 3 - l_map/2 - 2.5*w_spot
+			goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
 			if lane == "U":
 				goal[1] = -w_lane/2
 			else:
@@ -581,7 +582,11 @@ def spot_allocate(spots_U, spots_L, lane):
 
 	# If all spaces are occupied
 	print("There is no free space to allocate.")
-	return length * 3 - 10.5, lane
+	print(spots_U)
+	print(spots_L)
+	goal[0] = length * 3 - l_map/2 -1.5*w_spot
+	goal[2] = goal[0]
+	return goal, lane
 
 
 if __name__ == '__main__':

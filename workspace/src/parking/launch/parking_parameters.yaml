@@ -21,7 +21,8 @@ l_spot: 5.0
 
 # ========== Parameters for car ===========
 # The number of car
-total_number: 48
+# total_number: 48
+total_number: 4
 # The dimension of the car
 # Reference point is the center of rear axis
 # (x_front, x_rear, y_left, y_right)

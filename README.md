@@ -2,6 +2,11 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+###06/02/2019
+1. **[large-map branch]** Added circular motion to turning part, but the collision avoidance method is not modified.
+2. **[large-map branch]** Combined the spot allocation funtion into the initialization function of Vehicle Class.
+3. To-do: Clean the code, test a best circular motion, and fix the collision detection while turning.
+
 ### 05/14/2019
 1. **[large-map branch]** Fixed some bugs in allocation and now 44 cars can park. The hold simulation need about 30mins on the Thinkpad Desktop.
 

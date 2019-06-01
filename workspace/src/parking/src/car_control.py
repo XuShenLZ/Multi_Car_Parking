@@ -22,9 +22,16 @@ w_lane = rospy.get_param('w_lane')
 
 # Spot width
 w_spot = rospy.get_param('w_spot')
+l_spot = rospy.get_param('l_spot')
 
 # The total amount of car
 total_number = rospy.get_param('total_number')
+
+# Vacant spot
+# Initially, all zero
+# The shape of matrix is the same as parking lot
+spots_U = np.zeros((2, 22), dtype=int)
+spots_L = np.zeros((2, 22), dtype=int)
 
 class Vehicle(object):
 	"""docstring for Vehicle"""
@@ -32,7 +39,7 @@ class Vehicle(object):
 	# lane = "U": Upper lane, start from [-l_map/2,  w_lane/2]
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	# t0: The time the car starts to move
-	def __init__(self, car_num, lane, t0, goal):
+	def __init__(self, car_num, lane, t0, end_pose):
 		super(Vehicle, self).__init__()
 		# Car Number
 		self.car_num = car_num
@@ -44,9 +51,6 @@ class Vehicle(object):
 		self.t  = 0
 		# Departure time
 		self.t0 = t0
-
-		# The goal stopping position on straight line
-		self.goal = goal
 		
 		# Discrete Time Step
 		self.dt = 0.1
@@ -58,15 +62,22 @@ class Vehicle(object):
 		self.x     = -l_map/2 - self.car_num * 3
 		if self.lane == "U":
 			self.y =  w_lane/2
-			self.R =  w_spot
-			self.arc = (w_map - w_lane) + self.R
+			self.R = (l_spot + w_lane) / 2
 		elif self.lane == "L":
 			self.y = -w_lane/2
-			self.R =  2*w_spot
-			self.arc = (w_map + w_lane) + self.R
+			self.R = (l_spot + w_lane) / 2 + w_lane
 		else:
 			self.y = 0
 			print("The lane is not correctly specified")
+
+		# Arc length
+		self.arc = 0.5 * math.pi * self.R
+
+		# The goal stopping position on straight line
+		self.goal, end_spot = self.spot_allocate(spots_U, spots_L)
+
+		self.get_maneuver(end_spot, end_pose)
+
 		# The longitudinal state for circular motion
 		self.s     = self.x
 
@@ -93,6 +104,81 @@ class Vehicle(object):
 
 		# Parking maneuver publisher
 		self.maneuver_pub = rospy.Publisher(self.park_topicName, car_state, queue_size = 10)
+	
+	def spot_allocate(self, spots_U, spots_L):
+		# The number of columns
+		length = spots_L.shape[1]
+
+		if self.lane == "U":
+			# The car is now at the upper lane
+			row_idx = 0
+			other_lane = "L"
+		else:
+			# The car is now at the lower lane
+			row_idx = 1
+			other_lane = "U"
+
+		goal = [0,0,0]
+
+		# Check from the upper part first
+		# Check from the farest end to the closest
+		for col_idx in range(length):
+			# Firstly, check the current lane
+			if spots_U[1-row_idx, col_idx] == 0:
+				goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
+
+				if self.lane == "U":
+					goal[1] = -w_lane/2 + w_map
+				else:
+					goal[1] =  w_lane/2 + w_map
+
+				goal[2] = l_map + 2*self.arc + l_spot - goal[0]
+				spots_U[1-row_idx, col_idx] = 1
+				return goal, self.lane
+			# If occupied, check the other lane
+			elif spots_U[row_idx, col_idx] == 0:
+				goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
+				if self.lane == "U":
+					goal[1] = -w_lane/2 + w_map
+				else:
+					goal[1] =  w_lane/2 + w_map
+				
+				goal[2] = l_map + 2*self.arc + l_spot - goal[0]
+				spots_U[row_idx, col_idx] = 1
+				return goal, other_lane
+
+		# Then from the lower part
+		# Check from the farest end to the closest
+		for col_idx in range(length-1, -1, -1):
+			# Firstly, check the current lane
+			if spots_L[row_idx, col_idx] == 0:
+				goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
+				if self.lane == "U":
+					goal[1] = w_lane/2
+				else:
+					goal[1] = -w_lane/2
+				goal[2] = goal[0]
+				spots_L[row_idx, col_idx] = 1
+				return goal, self.lane
+			# If occupied, check the other lane
+			elif spots_L[1-row_idx, col_idx] == 0:
+				goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
+				if self.lane == "U":
+					goal[1] = -w_lane/2
+				else:
+					goal[1] = w_lane/2
+				goal[2] = goal[0]
+				spots_L[1-row_idx, col_idx] = 1
+				return goal, other_lane
+
+		# If all spaces are occupied
+		print("There is no free space to allocate.")
+		print(spots_U)
+		print(spots_L)
+		goal[0] = length * 3 - l_map/2 -1.5*w_spot
+		goal[2] = goal[0]
+		return goal, lane
+
 
 	def publish_state(self):
 		pub_data = car_state()
@@ -132,31 +218,51 @@ class Vehicle(object):
 		self.s += self.dt * self.v
 
 		# If in the lower half
-		if self.s <= l_map/2 + self.R:
+		if self.s <= l_map/2:
 			self.x = self.s
 			if self.lane == "U":
 				self.y =  w_lane/2
 			else:
 				self.y = -w_lane/2
 			self.psi   = 0
-		# If along the circle
-		elif self.s > l_map/2 + self.R and self.s < l_map/2 + self.arc:
-			# angle = (self.s - l_map/2) / arc * math.pi
-			# self.x   = l_map/2 + R * math.sin(angle)
-			# self.y   = w_map/2 - R * math.cos(angle)
-			# self.psi = angle
+			print("lower line")
+		# If along the first circle
+		elif self.s > l_map/2 and self.s <= l_map/2 + self.arc:
+			angle = (self.s - l_map/2) / self.arc * math.pi/2
+			self.x   = l_map/2 + self.R * math.sin(angle)
+			self.y   = w_map/2 - l_spot/2 - self.R * math.cos(angle)
+			self.psi = angle
+			# self.x   = l_map/2 + self.R
+			# self.y   = w_map/2 - (self.arc-self.R)/2 + self.s - (l_map/2 + self.R)
+			# self.psi = math.pi/2
+			print("1st arc")
+
+		# If along the vertical lane
+		elif self.s > l_map/2 + self.arc and self.s <= l_map/2 + self.arc + l_spot:
 			self.x   = l_map/2 + self.R
-			self.y   = w_map/2 - (self.arc-self.R)/2 + self.s - (l_map/2 + self.R)
+			self.y   = w_map/2 - l_spot/2 + self.s - (l_map/2 + self.arc)
 			self.psi = math.pi/2
+			print("vertical line")
+
+		# If along the second circle
+		elif self.s > l_map/2 + self.arc + l_spot and self.s <= l_map/2 + 2*self.arc + l_spot:
+			angle = (self.s - (l_map/2 + self.arc + l_spot)) / self.arc * math.pi/2
+			self.x   = l_map/2 + self.R * math.cos(angle)
+			self.y   = w_map/2 + l_spot/2 + self.R * math.sin(angle)
+			self.psi = math.pi/2 + angle
+
+			print("2nd arc")
 
 		# If in the upper half
-		elif self.s >= l_map/2 + self.arc:
-			self.x = l_map/2 + self.R - (self.s - self.arc - l_map/2)
+		elif self.s > l_map/2 + 2*self.arc + l_spot:
+			self.x = l_map/2 - (self.s - (l_map/2 + 2*self.arc + l_spot))
 			if self.lane == "U":
 				self.y = w_map - w_lane/2
 			else:
 				self.y = w_map + w_lane/2
 			self.psi   = math.pi
+
+			print("upper line")
 
 		self.publish_state()
 
@@ -341,8 +447,8 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	# is_random = True
-	is_random = False
+	is_random = True
+	# is_random = False
 
 	car_list = init_cars(is_random)
 	# ipdb.set_trace()
@@ -396,10 +502,6 @@ def main():
 
 def init_cars(is_random):
 	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)
-	# Vacant spot
-	# Initially, all zero
-	# The shape of matrix is the same as parking lot
-	spots_U = np.zeros((2, 22), dtype=int)
 
 	occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
 	for x in occupied:
@@ -408,8 +510,6 @@ def init_cars(is_random):
 	occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
 	for x in occupied:
 		spots_U[1, x] = 1
-
-	spots_L = np.zeros((2, 22), dtype=int)
 
 	occupied = [0, 2, 5, 6, 8, 12, 14, 15]
 	for x in occupied:
@@ -439,7 +539,6 @@ def init_cars(is_random):
 			dt, lane, end_pose = random_start()
 			# Allocate the end spot for each car
 			print(car_num)
-			goal, end_spot = spot_allocate(spots_U, spots_L, lane)
 			if lane == "U":
 				t0_U += dt
 				t0 = t0_U
@@ -448,8 +547,7 @@ def init_cars(is_random):
 				t0 = t0_L
 
 			# Initial each car object
-			car = Vehicle(car_num, lane, t0, goal)
-			car.get_maneuver(end_spot, end_pose)
+			car = Vehicle(car_num, lane, t0, end_pose)
 
 			car_list.append(car)
 			lane_string += lane
@@ -457,24 +555,22 @@ def init_cars(is_random):
 			t0_list.append(t0)
 			lane_list.append(lane)
 			end_pose_list.append(end_pose)
-			goal_list.append(goal)
-			end_spot_list.append(end_spot)
 
 		# Save the variables
 		with open('init_data.pickle', 'w') as f:
 			pickle.dump([t0_list, lane_list, \
-						end_pose_list, goal_list, \
+						end_pose_list, \
 						end_spot_list], f)
 	else:
 		# If we need to recover the last settings
 		with open('init_data.pickle') as f:
 			t0_list, lane_list, end_pose_list, \
-				goal_list, end_spot_list = pickle.load(f)
+				end_spot_list = pickle.load(f)
 
 		for car_num in range(total_number):
 			# Initial each car object
-			car = Vehicle(car_num, lane_list[car_num], t0_list[car_num], goal_list[car_num])
-			car.get_maneuver(end_spot_list[car_num], end_pose_list[car_num])
+			car = Vehicle(car_num, lane_list[car_num], \
+				t0_list[car_num], end_pose_list[car_num])
 
 			car_list.append(car)
 			lane_string += lane_list[car_num]
@@ -500,93 +596,6 @@ def random_start():
 		end_pose = "R"
 
 	return dt, lane, end_pose
-
-def spot_allocate(spots_U, spots_L, lane):
-	# The number of columns
-	length = spots_L.shape[1]
-
-	if lane == "U":
-		# The car is now at the upper lane
-		row_idx = 0
-		other_lane = "L"
-	else:
-		# The car is now at the lower lane
-		row_idx = 1
-		other_lane = "U"
-
-	goal = [0,0,0]
-
-	# Check from the upper part first
-	# Check from the farest end to the closest
-	for col_idx in range(length):
-		# Firstly, check the current lane
-		if spots_U[1-row_idx, col_idx] == 0:
-			goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
-
-			if lane == "U":
-				goal[1] = -w_lane/2 + w_map
-				R = w_spot
-				arc = (w_map - w_lane) + R
-			else:
-				goal[1] =  w_lane/2 + w_map
-				R = 2*w_spot
-				arc = (w_map + w_lane) + R
-			
-			# arc = math.pi*R
-
-			goal[2] = l_map + arc + R - goal[0]
-			spots_U[1-row_idx, col_idx] = 1
-			return goal, lane
-		# If occupied, check the other lane
-		elif spots_U[row_idx, col_idx] == 0:
-			goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
-			if lane == "U":
-				goal[1] = -w_lane/2 + w_map
-				R = w_spot
-				arc = (w_map - w_lane) + R
-			else:
-				goal[1] =  w_lane/2 + w_map
-				R = 2*w_spot
-				arc = (w_map + w_lane) + R
-			
-			# arc = math.pi*R
-			# arc = 4*R
-
-			goal[2] = l_map + arc + R - goal[0]
-			spots_U[row_idx, col_idx] = 1
-			return goal, other_lane
-
-	# Then from the lower part
-	# Check from the farest end to the closest
-	for col_idx in range(length-1, -1, -1):
-		# Firstly, check the current lane
-		if spots_L[row_idx, col_idx] == 0:
-			goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
-			if lane == "U":
-				goal[1] = w_lane/2
-			else:
-				goal[1] = -w_lane/2
-			goal[2] = goal[0]
-			spots_L[row_idx, col_idx] = 1
-			return goal, lane
-		# If occupied, check the other lane
-		elif spots_L[1-row_idx, col_idx] == 0:
-			goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
-			if lane == "U":
-				goal[1] = -w_lane/2
-			else:
-				goal[1] = w_lane/2
-			goal[2] = goal[0]
-			spots_L[1-row_idx, col_idx] = 1
-			return goal, other_lane
-
-	# If all spaces are occupied
-	print("There is no free space to allocate.")
-	print(spots_U)
-	print(spots_L)
-	goal[0] = length * 3 - l_map/2 -1.5*w_spot
-	goal[2] = goal[0]
-	return goal, lane
 
 
 if __name__ == '__main__':

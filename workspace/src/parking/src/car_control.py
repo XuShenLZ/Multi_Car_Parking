@@ -73,6 +73,21 @@ class Vehicle(object):
 		# Arc length
 		self.arc = 0.5 * math.pi * self.R
 
+		# Turning points
+		self.turn = [0.0, 0.0, 0.0, 0.0]
+		# The x offset for turning center
+		# x offset is the offset from x=l_map/2
+		# Positive: move to right; Negative: move to left
+		self.turn_offset_x = 0.0
+		# y offset is the offset from y=w_map/2
+		# Always positive
+		self.turn_offset_y = l_spot/2
+		# If the car end on the upper half -- turning is needed
+		self.turn[0] = l_map/2 + self.turn_offset_x
+		self.turn[1] = self.turn[0] + self.arc
+		self.turn[2] = self.turn[1] + 2*self.turn_offset_y
+		self.turn[3] = self.turn[2] + self.arc
+
 		# The goal stopping position on straight line
 		self.goal, end_spot = self.spot_allocate(spots_U, spots_L)
 
@@ -132,7 +147,8 @@ class Vehicle(object):
 				else:
 					goal[1] =  w_lane/2 + w_map
 
-				goal[2] = l_map + 2*self.arc + l_spot - goal[0]
+				# The goal position in s coordinate
+				goal[2] = l_map/2 + self.turn_offset_x - goal[0] + self.turn[3]
 				spots_U[1-row_idx, col_idx] = 1
 				return goal, self.lane
 			# If occupied, check the other lane
@@ -143,7 +159,7 @@ class Vehicle(object):
 				else:
 					goal[1] =  w_lane/2 + w_map
 				
-				goal[2] = l_map + 2*self.arc + l_spot - goal[0]
+				goal[2] = l_map/2 + self.turn_offset_x - goal[0] + self.turn[3]
 				spots_U[row_idx, col_idx] = 1
 				return goal, other_lane
 
@@ -218,7 +234,7 @@ class Vehicle(object):
 		self.s += self.dt * self.v
 
 		# If in the lower half
-		if self.s <= l_map/2:
+		if self.s <= self.turn[0]:
 			self.x = self.s
 			if self.lane == "U":
 				self.y =  w_lane/2
@@ -227,42 +243,37 @@ class Vehicle(object):
 			self.psi   = 0
 			print("lower line")
 		# If along the first circle
-		elif self.s > l_map/2 and self.s <= l_map/2 + self.arc:
-			angle = (self.s - l_map/2) / self.arc * math.pi/2
+		elif self.s > self.turn[0] and self.s <= self.turn[1]:
+			angle = (self.s - self.turn[0]) / self.arc * math.pi/2
 			self.x   = l_map/2 + self.R * math.sin(angle)
-			self.y   = w_map/2 - l_spot/2 - self.R * math.cos(angle)
+			self.y   = w_map/2 - self.turn_offset_y - self.R * math.cos(angle)
 			self.psi = angle
-			# self.x   = l_map/2 + self.R
-			# self.y   = w_map/2 - (self.arc-self.R)/2 + self.s - (l_map/2 + self.R)
-			# self.psi = math.pi/2
-			print("1st arc")
+			# print("1st arc")
 
 		# If along the vertical lane
-		elif self.s > l_map/2 + self.arc and self.s <= l_map/2 + self.arc + l_spot:
-			self.x   = l_map/2 + self.R
-			self.y   = w_map/2 - l_spot/2 + self.s - (l_map/2 + self.arc)
+		elif self.s > self.turn[1] and self.s <= self.turn[2]:
+			self.x   = l_map/2 + self.turn_offset_x + self.R
+			self.y   = w_map/2 - self.turn_offset_y + self.s - self.turn[1]
 			self.psi = math.pi/2
-			print("vertical line")
+			# print("vertical line")
 
 		# If along the second circle
-		elif self.s > l_map/2 + self.arc + l_spot and self.s <= l_map/2 + 2*self.arc + l_spot:
-			angle = (self.s - (l_map/2 + self.arc + l_spot)) / self.arc * math.pi/2
+		elif self.s > self.turn[2] and self.s <= self.turn[3]:
+			angle = (self.s - self.turn[2]) / self.arc * math.pi/2
 			self.x   = l_map/2 + self.R * math.cos(angle)
-			self.y   = w_map/2 + l_spot/2 + self.R * math.sin(angle)
+			self.y   = w_map/2 + self.turn_offset_y + self.R * math.sin(angle)
 			self.psi = math.pi/2 + angle
-
-			print("2nd arc")
+			# print("2nd arc")
 
 		# If in the upper half
-		elif self.s > l_map/2 + 2*self.arc + l_spot:
-			self.x = l_map/2 - (self.s - (l_map/2 + 2*self.arc + l_spot))
+		elif self.s > self.turn[3]:
+			self.x = l_map/2 - (self.s - self.turn[3])
 			if self.lane == "U":
 				self.y = w_map - w_lane/2
 			else:
 				self.y = w_map + w_lane/2
 			self.psi   = math.pi
 
-			print("upper line")
 
 		self.publish_state()
 
@@ -340,16 +351,41 @@ class Vehicle(object):
 	def not_collide(self, costmap):
 
 		if not self.is_parking():
-			# If During the turn
-			# if self.s >= l_map/2 + self.R and self.s <= l_map/2 + self.arc:
-			# 	for l in range(3,8):
-			# 		for j in range(-1,2):
-			# 			check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
-			# 			check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
-			# 			cost = costmap.get_cost(check_x, check_y)
-			# 			if cost[0] != 0 and cost[1] != self.car_num:
-			# 				return False
-			# else:
+			# If before the 1st turn
+			if self.s >= self.turn[0] - w_spot and self.s < self.turn[0]:
+				for l in range(0,5):
+					angle = 0.25 * l * math.pi/2
+					check_x   = l_map/2 + self.R * math.sin(angle)
+					check_y   = w_map/2 - self.turn_offset_y - self.R * math.cos(angle)
+					cost = costmap.get_cost(check_x, check_y)
+					if cost[0] != 0 and cost[1] != self.car_num:
+						return False
+			# If before the vertical lane
+			elif self.s >= self.turn[0] and self.s < self.turn[1]:
+				for l in range(0,5):
+					check_x   = l_map/2 + self.turn_offset_x + self.R
+					check_y   = w_map/2 - self.turn_offset_y + 0.25 * l * 2*self.turn_offset_y 
+					cost = costmap.get_cost(check_x, check_y)
+					if cost[0] != 0 and cost[1] != self.car_num:
+						return False
+			# If before the 2nd turn
+			elif self.s >= self.turn[1] and self.s < self.turn[2]:
+				for l in range(0,5):
+					angle = 0.25 * l * math.pi/2
+					check_x   = l_map/2 + self.R * math.cos(angle)
+					check_y   = w_map/2 + self.turn_offset_y + self.R * math.sin(angle)
+					cost = costmap.get_cost(check_x, check_y)
+					if cost[0] != 0 and cost[1] != self.car_num:
+						return False
+			# If before the straight lane in the upper part
+			elif self.s >= self.turn[2] and self.s < self.turn[3]:
+				for l in range(0,5):
+					check_x   = l_map/2 + self.turn_offset_x - l
+					check_y   = self.goal[1]
+					cost = costmap.get_cost(check_x, check_y)
+					if cost[0] != 0 and cost[1] != self.car_num:
+						return False
+			else:
 			# Only need to see front if going straight
 				for l in range(3,8):
 					for j in range(-1,2):

@@ -216,7 +216,7 @@ class Vehicle(object):
 	def drive_straight(self):
 		# If the car has now reached the departure time
 		if self.t < self.t0:
-			self.t += 1
+			# self.t += 1
 			return
 
 		# goal is the s value of parking starting point
@@ -241,21 +241,19 @@ class Vehicle(object):
 			else:
 				self.y = -w_lane/2
 			self.psi   = 0
-			print("lower line")
+
 		# If along the first circle
 		elif self.s > self.turn[0] and self.s <= self.turn[1]:
 			angle = (self.s - self.turn[0]) / self.arc * math.pi/2
-			self.x   = l_map/2 + self.R * math.sin(angle)
+			self.x   = l_map/2 + self.turn_offset_x + self.R * math.sin(angle)
 			self.y   = w_map/2 - self.turn_offset_y - self.R * math.cos(angle)
 			self.psi = angle
-			# print("1st arc")
 
 		# If along the vertical lane
 		elif self.s > self.turn[1] and self.s <= self.turn[2]:
 			self.x   = l_map/2 + self.turn_offset_x + self.R
 			self.y   = w_map/2 - self.turn_offset_y + self.s - self.turn[1]
 			self.psi = math.pi/2
-			# print("vertical line")
 
 		# If along the second circle
 		elif self.s > self.turn[2] and self.s <= self.turn[3]:
@@ -263,11 +261,10 @@ class Vehicle(object):
 			self.x   = l_map/2 + self.R * math.cos(angle)
 			self.y   = w_map/2 + self.turn_offset_y + self.R * math.sin(angle)
 			self.psi = math.pi/2 + angle
-			# print("2nd arc")
 
 		# If in the upper half
 		elif self.s > self.turn[3]:
-			self.x = l_map/2 - (self.s - self.turn[3])
+			self.x = l_map/2 + self.turn_offset_x - (self.s - self.turn[3])
 			if self.lane == "U":
 				self.y = w_map - w_lane/2
 			else:
@@ -351,37 +348,34 @@ class Vehicle(object):
 	def not_collide(self, costmap):
 
 		if not self.is_parking():
-			# If before the 1st turn
-			if self.s >= self.turn[0] - w_spot and self.s < self.turn[0]:
-				for l in range(0,5):
-					angle = 0.25 * l * math.pi/2
-					check_x   = l_map/2 + self.R * math.sin(angle)
-					check_y   = w_map/2 - self.turn_offset_y - self.R * math.cos(angle)
-					cost = costmap.get_cost(check_x, check_y)
-					if cost[0] != 0 and cost[1] != self.car_num:
-						return False
-			# If before the vertical lane
-			elif self.s >= self.turn[0] and self.s < self.turn[1]:
-				for l in range(0,5):
-					check_x   = l_map/2 + self.turn_offset_x + self.R
-					check_y   = w_map/2 - self.turn_offset_y + 0.25 * l * 2*self.turn_offset_y 
-					cost = costmap.get_cost(check_x, check_y)
-					if cost[0] != 0 and cost[1] != self.car_num:
-						return False
-			# If before the 2nd turn
-			elif self.s >= self.turn[1] and self.s < self.turn[2]:
-				for l in range(0,5):
-					angle = 0.25 * l * math.pi/2
-					check_x   = l_map/2 + self.R * math.cos(angle)
-					check_y   = w_map/2 + self.turn_offset_y + self.R * math.sin(angle)
-					cost = costmap.get_cost(check_x, check_y)
-					if cost[0] != 0 and cost[1] != self.car_num:
-						return False
-			# If before the straight lane in the upper part
-			elif self.s >= self.turn[2] and self.s < self.turn[3]:
-				for l in range(0,5):
-					check_x   = l_map/2 + self.turn_offset_x - l
-					check_y   = self.goal[1]
+			# If the turning is concerned
+			if self.s >= self.turn[0] - 2*w_spot and self.s < self.turn[3]:
+				for l in range(3,8):
+					# Extend the detection along s path
+					s0 = self.s + l
+					# If the detection point is before the 1st turn
+					if s0 < self.turn[0]:
+						check_x = s0
+						check_y = self.y
+					# If the detection point is during the 1st turn
+					elif s0 >= self.turn[0] and s0 < self.turn[1]:
+						angle = (s0 - self.turn[0]) / self.arc * 0.5 * math.pi
+						check_x   = l_map/2 + self.R * math.sin(angle)
+						check_y   = w_map/2 - self.turn_offset_y - self.R * math.cos(angle)
+					# If the detection point is during the vertical line
+					elif s0 >= self.turn[1] and s0 < self.turn[2]:
+						check_x   = l_map/2 + self.turn_offset_x + self.R
+						check_y   = w_map/2 - self.turn_offset_y + s0 - self.turn[1]
+					# If the detection point is during the 2nd turn
+					elif s0 >= self.turn[2] and s0 < self.turn[3]:
+						angle = (s0 - self.turn[2]) / self.arc * 0.5 * math.pi
+						check_x   = l_map/2 + self.R * math.cos(angle)
+						check_y   = w_map/2 + self.turn_offset_y + self.R * math.sin(angle)
+					# If the detection point is out of turning region
+					else:
+						check_x   = l_map/2 + self.turn_offset_x - (s0 - self.turn[3])
+						check_y   = w_map/2 + self.turn_offset_y + self.R
+
 					cost = costmap.get_cost(check_x, check_y)
 					if cost[0] != 0 and cost[1] != self.car_num:
 						return False
@@ -391,6 +385,7 @@ class Vehicle(object):
 					for j in range(-1,2):
 						check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
 						check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
+						
 						cost = costmap.get_cost(check_x, check_y)
 						if cost[0] != 0 and cost[1] != self.car_num:
 							return False
@@ -402,6 +397,7 @@ class Vehicle(object):
 					for j in range(-1,2):
 						check_x = rest_maneuver.x[i] + l*math.cos(rest_maneuver.psi[i]) + j*math.sin(rest_maneuver.psi[i])
 						check_y = rest_maneuver.y[i] + l*math.sin(rest_maneuver.psi[i]) - j*math.cos(rest_maneuver.psi[i])
+
 						cost = costmap.get_cost(check_x, check_y)
 						if cost[0] != 0 and cost[1] != self.car_num:
 							return False
@@ -483,8 +479,8 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	is_random = True
-	# is_random = False
+	# is_random = True
+	is_random = False
 
 	car_list = init_cars(is_random)
 	# ipdb.set_trace()
@@ -566,7 +562,6 @@ def init_cars(is_random):
 		t0_list       = []
 		lane_list     = []
 		end_pose_list = []
-		goal_list     = []
 		end_spot_list = []
 
 		for car_num in range(total_number):

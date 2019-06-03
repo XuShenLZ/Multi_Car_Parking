@@ -5,7 +5,8 @@ Multi Car and High Density Parking Coodination
 ### 06/03/2019
 1. **[large-map branch]** Improved the collision detection while turning. Now the detection pattern is the same as the case in straight lane. 
 2. **[large-map branch]** The time counter should be working properly and available for study.
-3. To-do: Examine the decentralized method and possible dead lock. Think about the way to rewrite the spot allocation.
+3. **[large-map branch]** Finished the repeatation test and record the waiting time into CSV file. 
+4. To-do: Examine the decentralized method and possible dead lock. Think about the way to rewrite the spot allocation.
 
 ### 06/03/2019
 1. **[large-map branch]** Added the collision detetcion while turning.

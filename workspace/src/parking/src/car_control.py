@@ -8,6 +8,7 @@ import math
 import time
 import random
 import numpy as np
+import csv
 
 import pickle
 import ipdb
@@ -51,6 +52,9 @@ class Vehicle(object):
 		self.t  = 0
 		# Departure time
 		self.t0 = t0
+
+		# Wait time
+		self.wait_t = 0
 		
 		# Discrete Time Step
 		self.dt = 0.1
@@ -212,6 +216,13 @@ class Vehicle(object):
 
 	def add_time(self):
 		self.t += 1
+
+	def add_wait_time(self):
+		if self.t >= self.t0:
+			self.wait_t += 1
+
+	def get_wait_time(self):
+		return self.wait_t
 
 	def drive_straight(self):
 		# If the car has now reached the departure time
@@ -385,7 +396,7 @@ class Vehicle(object):
 					for j in range(-1,2):
 						check_x = self.x + l*math.cos(self.psi) + j*math.sin(self.psi)
 						check_y = self.y + l*math.sin(self.psi) - j*math.cos(self.psi)
-						
+
 						cost = costmap.get_cost(check_x, check_y)
 						if cost[0] != 0 and cost[1] != self.car_num:
 							return False
@@ -479,61 +490,80 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	# is_random = True
-	is_random = False
+	for rep in range(10):
+		print('Currently it is #%d iteration' % rep)
+		is_random = True
+		# is_random = False
 
-	car_list = init_cars(is_random)
-	# ipdb.set_trace()
+		car_list = init_cars(is_random)
+		# ipdb.set_trace()
 
-	costmap = CostMap()
+		costmap = CostMap()
 
-	loop_rate = rospy.get_param('ctrl_rate')
-	rate = rospy.Rate(loop_rate)
-	while not rospy.is_shutdown():
+		loop_rate = rospy.get_param('ctrl_rate')
+		rate = rospy.Rate(loop_rate)
+		while not rospy.is_shutdown():
+			# for car in car_list:
+			for car_idx in range(total_number):
+				car = car_list[car_idx]
+				# Update Map
+				costmap.reset_map()
 
-		# for car in car_list:
-		for car_idx in range(total_number):
-			car = car_list[car_idx]
-			# Update Map
-			costmap.reset_map()
+				# Register the current positions of all cars
+				# Only concern the cars that have higher priority
+				for car0 in car_list[0:car_idx]:
+					if not car0.is_terminated():
+						state = car0.get_state()
+						costmap.write_cost(state.x, state.y, state.psi, state.car_num)
 
-			# Register the current positions of all cars
-			# Only concern the cars that have higher priority
-			for car0 in car_list[0:car_idx]:
-				if not car0.is_terminated():
-					state = car0.get_state()
-					costmap.write_cost(state.x, state.y, state.psi, state.car_num)
-
-			# Register the collision-free parking maneuver
-			# Only concern the cars that have higher priority
-			for car0 in car_list[0:car_idx]:
-				if not car0.is_terminated():
-					if car0.not_collide(costmap):
-						if car0.is_parking():
-							costmap.write_cost_maneuver(car0)
+				# Register the collision-free parking maneuver
+				# Only concern the cars that have higher priority
+				for car0 in car_list[0:car_idx]:
+					if not car0.is_terminated():
+						if car0.not_collide(costmap):
+							if car0.is_parking():
+								costmap.write_cost_maneuver(car0)
 
 
-			costmap.pub_costmap()
+				costmap.pub_costmap()
 
-			# Car control
-			# If the car is still running
-			if not car.is_terminated():
-				# Time increase
-				car.add_time()
-				# If the car has not arrived at the starting point
-				if not car.is_parking():
+				# Car control
+				# If the car is still running
+				if not car.is_terminated():
+					# Time increase
+					car.add_time()
+					# If the car has not arrived at the starting point
 					if car.not_collide(costmap):
-						car.drive_straight()
-				else:
-					if car.not_collide(costmap):
-						car.drive_parking()
+						if car.is_parking():
+							car.drive_parking()
+						else:
+							car.drive_straight()
+					else:
+						car.add_wait_time()
 
+			# Check whether all cars are terminated
+			terminated_list = [car.is_terminated() for car in car_list]
+			if all(terminated_list):
+				# Get the waiting time
+				wait_time_list = [car.get_wait_time() for car in car_list]
 
-		rate.sleep()
-		# raw_input()
+				# Record data
+				with open("/home/mpc/wait_time.csv", 'a+') as f:
+					writer = csv.writer(f)
+					writer.writerow(wait_time_list)
+
+				# Leave the while loop, end the program
+				break
+
+			rate.sleep()
 
 def init_cars(is_random):
 	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)
+
+	# Reset the occupancy map
+	global spots_U, spots_L
+	spots_U = np.zeros((2, 22), dtype=int)
+	spots_L = np.zeros((2, 22), dtype=int)
 
 	occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
 	for x in occupied:

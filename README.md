@@ -5,7 +5,9 @@ Multi Car and High Density Parking Coodination
 ### 06/06/2019
 1. **[large-map branch]** The collision detection must detect ALL vehicles rather than ones with higher priorities. The previous detection logic is commented.
 2. **[large-map branch]** Allocation strategies are written in a seperate file and different plans are started to be designed.
-3. To-do: (1) Decentralize the control; (2) Dead lock detection and prevention (re-assigning maneuver).
+3. **[large-map branch]** Decentralied the control. All car act at the same time based on the analysis of situation in last time step.
+4. **[large-map branch]** Added the dead lock detection and resolution method. Detection: if all vehicles are waiting, there is a dead lock. Solution: change the maneuver of the vehicle which is at the highest priority and is currently parking (this should be a participant of dead lock).
+5. **[large-map branch]** Fixed the bug in the simluator. Before the fix, previous plotters will not be cleared and they will be very messy after a few iterations. 
 
 ### 06/03/2019
 1. **[large-map branch]** Improved the collision detection while turning. Now the detection pattern is the same as the case in straight lane. 

@@ -261,6 +261,7 @@ class Simulator(object):
 
 	def init_cb(self, data):
 		self.car_lanes = data.data
+		self.plotter_list = []
 
 		for car_num in range(self.total_number):
 			# Initialize each car object

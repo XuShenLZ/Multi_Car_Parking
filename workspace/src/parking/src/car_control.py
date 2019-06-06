@@ -108,11 +108,12 @@ class Vehicle(object):
 		self.turn[3] = self.turn[2] + self.arc
 
 		# The goal stopping position on straight line
-		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
-		self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
+		self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
+		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
 
-
-		self.get_maneuver(end_spot, end_pose)
+		self.end_spot = end_spot
+		self.end_pose = end_pose
+		self.get_maneuver(self.end_spot, self.end_pose)
 
 		# The longitudinal state for circular motion
 		self.s     = self.x
@@ -293,6 +294,14 @@ class Vehicle(object):
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
 
+	def change_maneuver(self):
+		if self.end_pose == "F":
+			other_pose = "R"
+		else:
+			other_pose = "F"
+
+		self.get_maneuver(self.end_spot, other_pose)
+
 	def is_terminated(self):
 		return self.terminated
 
@@ -434,8 +443,8 @@ def main():
 	for rep in range(10):
 		print('Currently it is #%d iteration' % rep)
 
-		# is_random = True
-		is_random = False
+		is_random = True
+		# is_random = False
 
 		car_list = init_cars(is_random)
 		# ipdb.set_trace()
@@ -445,45 +454,49 @@ def main():
 		loop_rate = rospy.get_param('ctrl_rate')
 		rate = rospy.Rate(loop_rate)
 		while not rospy.is_shutdown():
+			# Update Map
+			costmap.reset_map()
+
+			# Firstly register all vehicle positions
 			for car in car_list:
-			# for car_idx in range(total_number):
-				# car = car_list[car_idx]
-				# Update Map
-				costmap.reset_map()
+				if not car.is_terminated():
+					state = car.get_state()
+					costmap.write_cost(state.x, state.y, state.psi, state.car_num)
 
-				# Register the current positions of all cars
-				# Only concern the cars that have higher priority
-				for car0 in car_list:
-				# for car0 in car_list[0:car_idx+1]:
-					if not car0.is_terminated():
-						state = car0.get_state()
-						costmap.write_cost(state.x, state.y, state.psi, state.car_num)
+			# Then register parking maneuver if collision-free
+			for car in car_list:
+				if not car.is_terminated():
+					if car.not_collide(costmap):
+						if car.is_parking():
+							costmap.write_cost_maneuver(car)
 
-				# Register the collision-free parking maneuver
-				# Only concern the cars that have higher priority
-				for car0 in car_list:
-				# for car0 in car_list[0:car_idx]:
-					if not car0.is_terminated():
-						if car0.not_collide(costmap):
-							if car0.is_parking():
-								costmap.write_cost_maneuver(car0)
+			costmap.pub_costmap()
 
+			# dead lock flag
+			dead_lock = True
 
-				costmap.pub_costmap()
-
-				# Car control
-				# If the car is still running
+			# Control
+			for car in car_list:
 				if not car.is_terminated():
 					# Time increase
 					car.add_time()
-					# If the car has not arrived at the starting point
 					if car.not_collide(costmap):
+						dead_lock = False
 						if car.is_parking():
 							car.drive_parking()
 						else:
 							car.drive_straight()
 					else:
 						car.add_wait_time()
+
+			# Dead lock resolution:
+			# Change a maneuver
+			if dead_lock:
+				print("Dead Lock")
+				for car in car_list:
+					if (not car.is_terminated()) and car.is_parking():
+						car.change_maneuver()
+						break
 
 			# Check whether all cars are terminated
 			terminated_list = [car.is_terminated() for car in car_list]

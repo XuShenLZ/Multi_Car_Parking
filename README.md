@@ -2,11 +2,17 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 06/06/2019
+1. **[large-map branch]** The collision detection must detect ALL vehicles rather than ones with higher priorities. The previous detection logic is commented.
+2. **[large-map branch]** Allocation strategies are written in a seperate file and different plans are started to be designed.
+3. To-do: (1) Decentralize the control; (2) Dead lock detection and prevention (re-assigning maneuver).
+
 ### 06/03/2019
 1. **[large-map branch]** Improved the collision detection while turning. Now the detection pattern is the same as the case in straight lane. 
 2. **[large-map branch]** The time counter should be working properly and available for study.
 3. **[large-map branch]** Finished the repeatation test and record the waiting time into CSV file. 
-4. To-do: Examine the decentralized method and possible dead lock. Think about the way to rewrite the spot allocation.
+4. **[large-map branch]** Add the arg to roslaunch file so that the visualization is optional, which can speed up the test.
+5. To-do: Examine the decentralized method and possible dead lock. Think about the way to rewrite the spot allocation.
 
 ### 06/03/2019
 1. **[large-map branch]** Added the collision detetcion while turning.

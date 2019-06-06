@@ -8,10 +8,16 @@ import math
 import time
 import random
 import numpy as np
-import csv
 
+# Data recording
+import csv
 import pickle
+
+# Debugging
 import ipdb
+
+# Spot allocation plans
+import spot_allocate
 
 # parameters
 # The length of the map
@@ -24,6 +30,15 @@ w_lane = rospy.get_param('w_lane')
 # Spot width
 w_spot = rospy.get_param('w_spot')
 l_spot = rospy.get_param('l_spot')
+
+# Construct a dictionary for the convenience of 
+# passing parameters
+Map = {}
+Map['l_map']  = l_map
+Map['w_map']  = w_map
+Map['w_lane'] = w_lane
+Map['w_spot'] = w_spot
+Map['l_spot'] = l_spot
 
 # The total amount of car
 total_number = rospy.get_param('total_number')
@@ -93,7 +108,9 @@ class Vehicle(object):
 		self.turn[3] = self.turn[2] + self.arc
 
 		# The goal stopping position on straight line
-		self.goal, end_spot = self.spot_allocate(spots_U, spots_L)
+		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
+		self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
+
 
 		self.get_maneuver(end_spot, end_pose)
 
@@ -123,82 +140,6 @@ class Vehicle(object):
 
 		# Parking maneuver publisher
 		self.maneuver_pub = rospy.Publisher(self.park_topicName, car_state, queue_size = 10)
-	
-	def spot_allocate(self, spots_U, spots_L):
-		# The number of columns
-		length = spots_L.shape[1]
-
-		if self.lane == "U":
-			# The car is now at the upper lane
-			row_idx = 0
-			other_lane = "L"
-		else:
-			# The car is now at the lower lane
-			row_idx = 1
-			other_lane = "U"
-
-		goal = [0,0,0]
-
-		# Check from the upper part first
-		# Check from the farest end to the closest
-		for col_idx in range(length):
-			# Firstly, check the current lane
-			if spots_U[1-row_idx, col_idx] == 0:
-				goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
-
-				if self.lane == "U":
-					goal[1] = -w_lane/2 + w_map
-				else:
-					goal[1] =  w_lane/2 + w_map
-
-				# The goal position in s coordinate
-				goal[2] = l_map/2 + self.turn_offset_x - goal[0] + self.turn[3]
-				spots_U[1-row_idx, col_idx] = 1
-				return goal, self.lane
-			# If occupied, check the other lane
-			elif spots_U[row_idx, col_idx] == 0:
-				goal[0] = (col_idx + 2.5 )* w_spot - l_map/2
-				if self.lane == "U":
-					goal[1] = -w_lane/2 + w_map
-				else:
-					goal[1] =  w_lane/2 + w_map
-				
-				goal[2] = l_map/2 + self.turn_offset_x - goal[0] + self.turn[3]
-				spots_U[row_idx, col_idx] = 1
-				return goal, other_lane
-
-		# Then from the lower part
-		# Check from the farest end to the closest
-		for col_idx in range(length-1, -1, -1):
-			# Firstly, check the current lane
-			if spots_L[row_idx, col_idx] == 0:
-				goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
-				if self.lane == "U":
-					goal[1] = w_lane/2
-				else:
-					goal[1] = -w_lane/2
-				goal[2] = goal[0]
-				spots_L[row_idx, col_idx] = 1
-				return goal, self.lane
-			# If occupied, check the other lane
-			elif spots_L[1-row_idx, col_idx] == 0:
-				goal[0] = col_idx * 3 - l_map/2 - 1.5*w_spot
-				if self.lane == "U":
-					goal[1] = -w_lane/2
-				else:
-					goal[1] = w_lane/2
-				goal[2] = goal[0]
-				spots_L[1-row_idx, col_idx] = 1
-				return goal, other_lane
-
-		# If all spaces are occupied
-		print("There is no free space to allocate.")
-		print(spots_U)
-		print(spots_L)
-		goal[0] = length * 3 - l_map/2 -1.5*w_spot
-		goal[2] = goal[0]
-		return goal, lane
-
 
 	def publish_state(self):
 		pub_data = car_state()
@@ -492,8 +433,9 @@ def main():
 
 	for rep in range(10):
 		print('Currently it is #%d iteration' % rep)
-		is_random = True
-		# is_random = False
+
+		# is_random = True
+		is_random = False
 
 		car_list = init_cars(is_random)
 		# ipdb.set_trace()
@@ -503,22 +445,24 @@ def main():
 		loop_rate = rospy.get_param('ctrl_rate')
 		rate = rospy.Rate(loop_rate)
 		while not rospy.is_shutdown():
-			# for car in car_list:
-			for car_idx in range(total_number):
-				car = car_list[car_idx]
+			for car in car_list:
+			# for car_idx in range(total_number):
+				# car = car_list[car_idx]
 				# Update Map
 				costmap.reset_map()
 
 				# Register the current positions of all cars
 				# Only concern the cars that have higher priority
-				for car0 in car_list[0:car_idx]:
+				for car0 in car_list:
+				# for car0 in car_list[0:car_idx+1]:
 					if not car0.is_terminated():
 						state = car0.get_state()
 						costmap.write_cost(state.x, state.y, state.psi, state.car_num)
 
 				# Register the collision-free parking maneuver
 				# Only concern the cars that have higher priority
-				for car0 in car_list[0:car_idx]:
+				for car0 in car_list:
+				# for car0 in car_list[0:car_idx]:
 					if not car0.is_terminated():
 						if car0.not_collide(costmap):
 							if car0.is_parking():

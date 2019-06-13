@@ -31,6 +31,8 @@ w_lane = rospy.get_param('w_lane')
 w_spot = rospy.get_param('w_spot')
 l_spot = rospy.get_param('l_spot')
 
+maneuver_client = rospy.ServiceProxy('park_maneuver', maneuver)
+
 # Construct a dictionary for the convenience of 
 # passing parameters
 Map = {}
@@ -108,8 +110,10 @@ class Vehicle(object):
 		self.turn[3] = self.turn[2] + self.arc
 
 		# The goal stopping position on straight line
-		self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
+		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
 		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
+		self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 5)
+
 
 		self.end_spot = end_spot
 		self.end_pose = end_pose
@@ -284,7 +288,7 @@ class Vehicle(object):
 		# end_pose: "F"(Front) or "R"(Reverse)
 		rospy.wait_for_service('park_maneuver')
 		try:
-			maneuver_client = rospy.ServiceProxy('park_maneuver', maneuver)
+			# maneuver_client = rospy.ServiceProxy('park_maneuver', maneuver)
 			self.maneuver_data = maneuver_client(self.lane, end_spot, end_pose)
 
 			if self.goal[1] >= w_map/2:

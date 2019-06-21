@@ -112,7 +112,7 @@ class Vehicle(object):
 		# The goal stopping position on straight line
 		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
 		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
-		self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 5)
+		self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 13)
 
 
 		self.end_spot = end_spot
@@ -378,7 +378,7 @@ class CostMap(object):
 		gridsize = rospy.get_param('gridsize')
 		cmap_len = rospy.get_param('cmap_len')
 		cmap_wid = rospy.get_param('cmap_wid')
-		self.xgrid    = range(-cmap_len/2,   cmap_len/2+3*int(w_spot)+1, gridsize)
+		self.xgrid    = range(-cmap_len/2-150,   cmap_len/2+3*int(w_spot)+1, gridsize)
 		self.ygrid    = range(-cmap_wid/2, cmap_wid*3/2+1, gridsize)
 		self.length   = len(self.xgrid)
 		self.width    = len(self.ygrid)
@@ -444,7 +444,7 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	for rep in range(10):
+	for rep in range(20):
 		print('Currently it is #%d iteration' % rep)
 
 		is_random = True

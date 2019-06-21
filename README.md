@@ -2,6 +2,10 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 06/20/2019
+1. **[large-map branch]** "Same Side" allocation strategies are written as parameterized by interval size;
+2. **[large-map branch]** Costmap is extended to make sure there is no collision before the entrance.
+
 ### 06/06/2019
 1. **[large-map branch]** The collision detection must detect ALL vehicles rather than ones with higher priorities. The previous detection logic is commented.
 2. **[large-map branch]** Allocation strategies are written in a seperate file and different plans are started to be designed.

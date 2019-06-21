@@ -118,6 +118,7 @@ def plot_map():
 	###############
 	# Plot properties
 	plt.axis('equal')
+	plt.xlim(-40, 50)
 	# plt.xlim(-20, 20)
 	# plt.ylim(-10, 10)
 
@@ -288,6 +289,8 @@ def main():
 
 	loop_rate = rospy.get_param('plot_rate')
 	rate = rospy.Rate(loop_rate)
+
+	plt.rcParams.update({'font.size': 22})
 
 	while not rospy.is_shutdown():
 		plot_map()

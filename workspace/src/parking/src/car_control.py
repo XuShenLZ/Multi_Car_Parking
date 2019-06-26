@@ -111,8 +111,10 @@ class Vehicle(object):
 
 		# The goal stopping position on straight line
 		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
+		# self.goal, end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, 13)
 		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
-		self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 13)
+		self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 6)
+		# self.goal, end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
 
 
 		self.end_spot = end_spot
@@ -444,7 +446,7 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	for rep in range(20):
+	for rep in range(50):
 		print('Currently it is #%d iteration' % rep)
 
 		is_random = True
@@ -554,6 +556,7 @@ def init_cars(is_random):
 		lane_list     = []
 		end_pose_list = []
 		end_spot_list = []
+		goal_list     = []
 
 		for car_num in range(total_number):
 			# Generate the starting time,
@@ -578,11 +581,22 @@ def init_cars(is_random):
 			lane_list.append(lane)
 			end_pose_list.append(end_pose)
 
+			state = car.get_state()
+			goal_list.append(state.goal)
+			end_spot_list.append(state.end_spot)
+
 		# Save the variables
 		with open('init_data.pickle', 'w') as f:
 			pickle.dump([t0_list, lane_list, \
 						end_pose_list, \
 						end_spot_list], f)
+
+		# file_name = 'random_' + str(int(time.time())) + '.pickle'
+		# # Save the variables for random assign
+		# with open(file_name, 'w') as f:
+		# 	pickle.dump([t0_list, lane_list, \
+		# 				end_pose_list, \
+		# 				goal_list, end_spot_list], f)
 	else:
 		# If we need to recover the last settings
 		with open('init_data.pickle') as f:

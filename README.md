@@ -2,6 +2,11 @@
 Multi Car and High Density Parking Coodination
 
 ## Update log
+### 06/29/2019
+1. **[large-map branch]** Added Solo strategy, which assigns space from end to front with interval, then starts from end again.
+2. **[large-map branch]** Changed the `add_time` and `add_wait_time` so that it accumulates dt directly.
+3. **[large-map branch]** The arrival time interval is exponentially distributed. 
+
 ### 06/26/2019
 1. **[large-map branch]** Random strategy is desined and the corresponding data recording is available.
 

@@ -51,13 +51,15 @@ total_number = rospy.get_param('total_number')
 spots_U = np.zeros((2, 22), dtype=int)
 spots_L = np.zeros((2, 22), dtype=int)
 
+spot_list = []
+
 class Vehicle(object):
 	"""docstring for Vehicle"""
 	# car_num is the integer value of car number
 	# lane = "U": Upper lane, start from [-l_map/2,  w_lane/2]
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	# t0: The time the car starts to move
-	def __init__(self, car_num, lane, t0, end_pose):
+	def __init__(self, car_num, lane, t0, x0, end_pose):
 		super(Vehicle, self).__init__()
 		# Car Number
 		self.car_num = car_num
@@ -80,7 +82,7 @@ class Vehicle(object):
 		self.pIdx = 0
 
 		# State of the car
-		self.x     = -l_map/2 - self.car_num * 3
+		self.x     = x0
 		if self.lane == "U":
 			self.y =  w_lane/2
 			self.R = (l_spot + w_lane) / 2
@@ -113,11 +115,11 @@ class Vehicle(object):
 		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
 		# self.goal, end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, 13)
 		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
-		self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 6)
+		# self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 6)
 		# self.goal, end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
+		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, 6)
 
 
-		self.end_spot = end_spot
 		self.end_pose = end_pose
 		self.get_maneuver(self.end_spot, self.end_pose)
 
@@ -163,11 +165,11 @@ class Vehicle(object):
 		return self.parking
 
 	def add_time(self):
-		self.t += 1
+		self.t += self.dt
 
 	def add_wait_time(self):
 		if self.t >= self.t0:
-			self.wait_t += 1
+			self.wait_t += self.dt
 
 	def get_wait_time(self):
 		return self.wait_t
@@ -380,7 +382,7 @@ class CostMap(object):
 		gridsize = rospy.get_param('gridsize')
 		cmap_len = rospy.get_param('cmap_len')
 		cmap_wid = rospy.get_param('cmap_wid')
-		self.xgrid    = range(-cmap_len/2-150,   cmap_len/2+3*int(w_spot)+1, gridsize)
+		self.xgrid    = range(-cmap_len/2-200,   cmap_len/2+3*int(w_spot)+1, gridsize)
 		self.ygrid    = range(-cmap_wid/2, cmap_wid*3/2+1, gridsize)
 		self.length   = len(self.xgrid)
 		self.width    = len(self.ygrid)
@@ -446,7 +448,7 @@ def main():
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
 
-	for rep in range(50):
+	for rep in range(20):
 		print('Currently it is #%d iteration' % rep)
 
 		is_random = True
@@ -524,9 +526,10 @@ def init_cars(is_random):
 	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)
 
 	# Reset the occupancy map
-	global spots_U, spots_L
+	global spots_U, spots_L, spot_list
 	spots_U = np.zeros((2, 22), dtype=int)
 	spots_L = np.zeros((2, 22), dtype=int)
+	spot_list = []
 
 	occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
 	for x in occupied:
@@ -545,6 +548,9 @@ def init_cars(is_random):
 		spots_L[1, x] = 1
 
 	car_list = []
+
+	car_list_U = []
+	car_list_L = []
 
 	t0_U = 0
 	t0_L = 0
@@ -567,15 +573,33 @@ def init_cars(is_random):
 			if lane == "U":
 				t0_U += dt
 				t0 = t0_U
+				# The starting position
+				if len(car_list_U) == 0:
+					x0 = -l_map/2
+				else:
+					last_car_state = car_list_U[-1].get_state()
+					# Following the last vehicle in this lane
+					# But must outside the lot
+					x0 = min(-l_map/2, last_car_state.x - 5)
 			else:
 				t0_L += dt
 				t0 = t0_L
+				if len(car_list_L) == 0:
+					x0 = -l_map/2
+				else:
+					last_car_state = car_list_L[-1].get_state()
+					x0 = min(-l_map/2, last_car_state.x - 5)
 
 			# Initial each car object
-			car = Vehicle(car_num, lane, t0, end_pose)
+			car = Vehicle(car_num, lane, t0, x0, end_pose)
 
 			car_list.append(car)
 			lane_string += lane
+
+			if lane == "U":
+				car_list_U.append(car)
+			else:
+				car_list_L.append(car)
 
 			t0_list.append(t0)
 			lane_list.append(lane)
@@ -616,8 +640,11 @@ def init_cars(is_random):
 	return car_list
 
 def random_start():
-	# The arrival time for car is randomly distributed
-	dt = random.randint(1,10)
+	# The arrival time for car is exponentially distributed
+	# And round to 0.1 
+	dt = round(np.random.exponential(2), 1)
+	# dt = random.randint(1,10)
+
 
 	# Choose the lane randomly
 	if random.random() >= 0.5:

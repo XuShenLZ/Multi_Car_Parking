@@ -148,7 +148,7 @@ class CarSubscriber(Vehicle):
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	def __init__(self, car_num, lane):
 		# From Base Class
-		Vehicle.__init__(self, car_num, lane, 0, "F")
+		Vehicle.__init__(self, car_num, lane, 0, l_map, "F")
 
 		self.rest_park = car_state()
 		self.rest_park.x = []
@@ -249,7 +249,7 @@ class CostMapSubscriber(CostMap):
 		# print("Cost Map Updated")
 
 	def plot_costmap(self):
-		plt.pcolormesh(self.X, self.Y, self.cost, alpha=0.5)
+		plt.pcolormesh(self.X, self.Y, self.cost, alpha=0.5, edgecolor='face')
 
 class Simulator(object):
 	"""docstring for Simulator"""

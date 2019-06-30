@@ -357,7 +357,8 @@ def deepest_n(car, Map, spots_U, spots_L, n):
 	return goal, lane
 
 # =========== Random Strategy =========
-# Vehicles will choose randomly
+# Vehicles will choose randomly, but fill the upper part
+# firstly, then lower part
 def random_assign(car, Map, spots_U, spots_L):
 	# The number of columns
 	[width, length] = spots_L.shape
@@ -545,5 +546,101 @@ def solo_n(car, Map, spots_U, spots_L, spot_list, n):
 
 		goal[2] = goal[0]
 		lane = "L"
+
+	return goal, lane
+
+# =========== Random-all Strategy =========
+# Vehicles will choose randomly in all free spots
+def random_assign_all(car, Map, spots_U, spots_L):
+	# The number of columns
+	[width, length] = spots_L.shape
+
+	goal = [0,0,0]
+
+	random_val = random.random()
+
+	size_free = 0
+
+	# Upper part
+	free_bool = (spots_U == 0)
+	free      = spots_U[free_bool]
+	size_free += free.size
+
+	# Lower part
+	free_bool = (spots_L == 0)
+	free      = spots_L[free_bool]
+	size_free += free.size
+
+	# If there is free space
+	if size_free > 0:
+		for bin_loc in range(1, size_free+1):
+			if 1.0/size_free * bin_loc > random_val:
+				break
+
+		counter = 0
+		break_flag = False
+		row_idx = 0
+		col_idx = 0
+		for row_idx in range(2*width):
+			for col_idx in range(length):
+				if row_idx <=1:
+					if spots_U[row_idx, col_idx] == 0:
+						counter += 1
+				else:
+					if spots_L[row_idx-2, col_idx] == 0:
+						counter += 1
+				
+				# Whether reached the target
+				if counter == bin_loc:
+					break_flag = True
+					break
+
+			if break_flag:
+				break
+
+	if row_idx == 0:
+		goal[0] = (col_idx + 2.5 )* Map['w_spot'] - Map['l_map']/2
+
+		if car.lane == "U":
+			goal[1] = -Map['w_lane']/2 + Map['w_map']
+		else:
+			goal[1] =  Map['w_lane']/2 + Map['w_map']
+
+		goal[2] = Map['l_map']/2 + car.turn_offset_x - goal[0] + car.turn[3]
+		lane = "L"
+		spots_U[row_idx, col_idx] = 1
+
+	elif row_idx == 1:
+		goal[0] = (col_idx + 2.5 )* Map['w_spot'] - Map['l_map']/2
+		if car.lane == "U":
+			goal[1] = -Map['w_lane']/2 + Map['w_map']
+		else:
+			goal[1] =  Map['w_lane']/2 + Map['w_map']
+
+		goal[2] = Map['l_map']/2 + car.turn_offset_x - goal[0] + car.turn[3]
+		lane = "U"
+		spots_U[row_idx, col_idx] = 1
+
+	elif row_idx == 2:
+		goal[0] = (col_idx - 1.5 )* Map['w_spot'] - Map['l_map']/2
+		if car.lane == "U":
+			goal[1] = Map['w_lane']/2
+		else:
+			goal[1] = -Map['w_lane']/2
+
+		goal[2] = goal[0]
+		lane = "U"
+		spots_L[row_idx-2, col_idx] = 1
+
+	elif row_idx == 3:
+		goal[0] = (col_idx - 1.5 )* Map['w_spot'] - Map['l_map']/2
+		if car.lane == "U":
+			goal[1] = Map['w_lane']/2
+		else:
+			goal[1] = -Map['w_lane']/2
+
+		goal[2] = goal[0]
+		lane = "L"
+		spots_L[row_idx-2, col_idx] = 1
 
 	return goal, lane

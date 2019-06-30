@@ -14,7 +14,7 @@ import csv
 import pickle
 
 # Debugging
-import ipdb
+# import ipdb
 
 # Spot allocation plans
 import spot_allocate
@@ -120,7 +120,8 @@ class Vehicle(object):
 		# self.goal, self.end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
 		# self.goal, self.end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, interval)
 		# self.goal, self.end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
-		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
+		# self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
+		self.goal, self.end_spot = spot_allocate.random_assign_all(self, Map, spots_U, spots_L)
 
 
 		self.end_pose = end_pose

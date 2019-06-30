@@ -1,7 +1,7 @@
 # Multi_Car_Parking
 Multi Car and High Density Parking Coodination
 
-## Configuration Steps (Fresh Ubuntu 16.04)
+## Configuration Steps (Fresh Ubuntu 16.04 with Python 2.7)
 1. install python-pip: `apt install python-pip`
 2. Upgrade pip: `pip install --upgrade pip`
 3. Intsall ROS kinetic, as described in ROS website
@@ -15,12 +15,13 @@ Multi Car and High Density Parking Coodination
 6. Install python dependencies
 	1. (For Debug) `pip install ipdb`
 7. Clone the git repository, and add `--recursive` property
-8. Change the H-OBCA path in ".../src/parking/launch/parking_parameters.yaml"
+8. Change the H-OBCA path and CSV saving path in ".../src/parking/launch/parking_parameters.yaml" and "car_control.py"
 
 
 ## Update log
 ### 06/30/2019
 1. **[large-map branch]** Fixed the data saving function so that the weird dead lock can be investigated
+2. **[large-map branch]** Added random_all strategy which select randomly in all free spots.
 
 ### 06/29/2019
 1. **[large-map branch]** Added Solo strategy, which assigns space from end to front with interval, then starts from end again.

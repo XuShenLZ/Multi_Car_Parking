@@ -1,6 +1,23 @@
 # Multi_Car_Parking
 Multi Car and High Density Parking Coodination
 
+## Configuration Steps (Fresh Ubuntu 16.04)
+1. install python-pip: `apt install python-pip`
+2. Upgrade pip: `pip install --upgrade pip`
+3. Intsall ROS kinetic, as described in ROS website
+4. Install Git and configure
+5. Install Julia 0.6.4 (For H-OBCA):
+	1. Download the package: `wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz`
+	2. Extract the package
+	3. Add it to system environment: `sudo ln -s ~/path~to~julia~/bin/julia /usr/local/bin/julia`
+	4. Inside Julia, install `RobotOS`, `JuMP`, `Ipopt`, `PyPlot`, `NearestNeighbors`, `ControlSystems`, `JLD`
+	5. Inside Julia, change the Python version to 2.7: `ENV["PYTHON"]="/usr/bin/python2.7"` and `Pkg.build("PyCall")`
+6. Install python dependencies
+	1. (For Debug) `pip install ipdb`
+7. Clone the git repository, and add `--recursive` property
+8. Change the H-OBCA path in ".../src/parking/launch/parking_parameters.yaml"
+
+
 ## Update log
 ### 06/29/2019
 1. **[large-map branch]** Added Solo strategy, which assigns space from end to front with interval, then starts from end again.

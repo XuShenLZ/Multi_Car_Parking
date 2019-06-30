@@ -117,7 +117,7 @@ class Vehicle(object):
 		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
 		# self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 6)
 		# self.goal, end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
-		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, 6)
+		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, 7)
 
 
 		self.end_pose = end_pose

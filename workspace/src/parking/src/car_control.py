@@ -114,12 +114,12 @@ class Vehicle(object):
 		self.turn[3] = self.turn[2] + self.arc
 
 		# The goal stopping position on straight line
+		print("Allocation interval = %d" % interval)
 		# self.goal, self.end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
 		# self.goal, self.end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, interval)
 		# self.goal, self.end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
 		# self.goal, self.end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, interval)
 		# self.goal, self.end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
-		print("Allocation interval = %d" % interval)
 		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
 
 
@@ -312,6 +312,7 @@ class Vehicle(object):
 			other_pose = "F"
 
 		self.get_maneuver(self.end_spot, other_pose)
+		self.end_pose = other_pose
 
 	def is_terminated(self):
 		return self.terminated
@@ -466,6 +467,8 @@ def main():
 
 			costmap = CostMap()
 
+			dead_lock_count = 0
+
 			loop_rate = rospy.get_param('ctrl_rate')
 			rate = rospy.Rate(loop_rate)
 			while not rospy.is_shutdown():
@@ -508,10 +511,23 @@ def main():
 				# Change a maneuver
 				if dead_lock:
 					print("Dead Lock")
+					dead_lock_count += 1
 					for car in car_list:
 						if (not car.is_terminated()) and car.is_parking():
 							car.change_maneuver()
 							break
+				else:
+					# The previous dead lock is 
+					# handled successfully
+					dead_lock_count = 0
+
+				# If after the dead lock resolution
+				# in the next loop, there is still dead lock
+				# record the data an exit
+				if dead_lock_count > 1:
+					print("Dead Lock is not resolved. Exiting... Please refer to the saved data file for information")
+					break
+
 
 				# Check whether all cars are terminated
 				terminated_list = [car.is_terminated() for car in car_list]
@@ -565,8 +581,9 @@ def init_cars(is_random):
 
 	if is_random:
 		# If the initialization is done by random
-		t0_list       = []
 		lane_list     = []
+		t0_list       = []
+		x0_list       = []
 		end_pose_list = []
 		end_spot_list = []
 		goal_list     = []
@@ -609,6 +626,7 @@ def init_cars(is_random):
 				car_list_L.append(car)
 
 			t0_list.append(t0)
+			x0_list.append(x0)
 			lane_list.append(lane)
 			end_pose_list.append(end_pose)
 
@@ -618,9 +636,11 @@ def init_cars(is_random):
 
 		# Save the variables
 		with open('init_data.pickle', 'w') as f:
-			pickle.dump([t0_list, lane_list, \
+			pickle.dump([t0_list, x0_list, lane_list, \
 						end_pose_list, \
 						end_spot_list], f)
+
+		print("Init Data Saved.")
 
 		# file_name = 'random_' + str(int(time.time())) + '.pickle'
 		# # Save the variables for random assign
@@ -631,13 +651,13 @@ def init_cars(is_random):
 	else:
 		# If we need to recover the last settings
 		with open('init_data.pickle') as f:
-			t0_list, lane_list, end_pose_list, \
+			t0_list, x0_list, lane_list, end_pose_list, \
 				end_spot_list = pickle.load(f)
 
 		for car_num in range(total_number):
 			# Initial each car object
 			car = Vehicle(car_num, lane_list[car_num], \
-				t0_list[car_num], end_pose_list[car_num])
+				t0_list[car_num], x0_list[car_num], end_pose_list[car_num])
 
 			car_list.append(car)
 			lane_string += lane_list[car_num]

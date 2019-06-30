@@ -1,9 +1,9 @@
 # Git Ignore
 
 # Folders
-MATLAB_Code/3Cars_Intersection/figures/
-MATLAB_Code/Single_Car_Parking_Lot/figures/
-Figures/
+/MATLAB_Code/3Cars_Intersection/figures/
+/MATLAB_Code/Single_Car_Parking_Lot/figures/
+/Figures/
 workspace/build/
 
 # files

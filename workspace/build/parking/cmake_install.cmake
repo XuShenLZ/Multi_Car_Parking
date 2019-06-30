@@ -65,7 +65,7 @@ if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  execute_process(COMMAND "/home/mpc/Envs/parking/bin/python" -m compileall "/home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking")
+  execute_process(COMMAND "/usr/bin/python" -m compileall "/home/mpc/Multi_Car_Parking/workspace/devel/lib/python2.7/dist-packages/parking")
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")

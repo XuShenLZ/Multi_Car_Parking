@@ -230,7 +230,7 @@ LSB_RELEASE_EXECUTABLE:FILEPATH=/usr/bin/lsb_release
 NOSETESTS:FILEPATH=/usr/bin/nosetests-2.7
 
 //Path to a program.
-PYTHON_EXECUTABLE:FILEPATH=/home/mpc/Envs/parking/bin/python
+PYTHON_EXECUTABLE:FILEPATH=/usr/bin/python
 
 //Specify specific Python version to use ('major.minor' or 'major')
 PYTHON_VERSION:STRING=
@@ -367,12 +367,6 @@ rostime_DIR:PATH=/opt/ros/kinetic/share/rostime/cmake
 
 //The directory containing a CMake configuration file for std_msgs.
 std_msgs_DIR:PATH=/opt/ros/kinetic/share/std_msgs/cmake
-
-//Value Computed by CMake
-test_BINARY_DIR:STATIC=/home/mpc/Multi_Car_Parking/workspace/build/test
-
-//Value Computed by CMake
-test_SOURCE_DIR:STATIC=/home/mpc/Multi_Car_Parking/workspace/src/test
 
 
 ########################
@@ -516,7 +510,7 @@ CMAKE_UNAME:INTERNAL=/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Details about finding PythonInterp
-FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/home/mpc/Envs/parking/bin/python][v2.7.12()]
+FIND_PACKAGE_MESSAGE_DETAILS_PythonInterp:INTERNAL=[/usr/bin/python][v2.7.12()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 GMOCK_FROM_SOURCE_FOUND:INTERNAL=TRUE

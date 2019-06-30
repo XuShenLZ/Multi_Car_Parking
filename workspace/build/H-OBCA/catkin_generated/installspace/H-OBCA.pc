@@ -1,8 +1,0 @@
-prefix=/home/mpc/Multi_Car_Parking/workspace/install
-
-Name: H-OBCA
-Description: Description of H-OBCA
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/mpc/Multi_Car_Parking/workspace/install/lib 
-Requires: 

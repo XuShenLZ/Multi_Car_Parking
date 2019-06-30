@@ -1,8 +1,0 @@
-prefix=/home/mpc/Multi_Car_Parking/workspace/install
-
-Name: parking
-Description: Description of parking
-Version: 0.0.0
-Cflags: -I/home/mpc/Multi_Car_Parking/workspace/install/include
-Libs: -L/home/mpc/Multi_Car_Parking/workspace/install/lib 
-Requires: message_runtime

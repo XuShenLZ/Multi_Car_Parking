@@ -53,6 +53,8 @@ spots_L = np.zeros((2, 22), dtype=int)
 
 spot_list = []
 
+interval = 1
+
 class Vehicle(object):
 	"""docstring for Vehicle"""
 	# car_num is the integer value of car number
@@ -112,12 +114,13 @@ class Vehicle(object):
 		self.turn[3] = self.turn[2] + self.arc
 
 		# The goal stopping position on straight line
-		# self.goal, end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
-		# self.goal, end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, 13)
-		# self.goal, end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
-		# self.goal, end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, 6)
-		# self.goal, end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
-		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, 7)
+		# self.goal, self.end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
+		# self.goal, self.end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, interval)
+		# self.goal, self.end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
+		# self.goal, self.end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, interval)
+		# self.goal, self.end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
+		print("Allocation interval = %d" % interval)
+		self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
 
 
 		self.end_pose = end_pose
@@ -447,80 +450,84 @@ def main():
 
 	# Init ROS Node
 	rospy.init_node("carNode", anonymous=True)
+	global interval
 
-	for rep in range(20):
-		print('Currently it is #%d iteration' % rep)
+	# To iterate over all interval sizes
+	for itv in range(1,13):
+		interval = itv
+		for rep in range(20):
+			print('Currently it is #%d iteration' % rep)
 
-		is_random = True
-		# is_random = False
+			is_random = True
+			# is_random = False
 
-		car_list = init_cars(is_random)
-		# ipdb.set_trace()
+			car_list = init_cars(is_random)
+			# ipdb.set_trace()
 
-		costmap = CostMap()
+			costmap = CostMap()
 
-		loop_rate = rospy.get_param('ctrl_rate')
-		rate = rospy.Rate(loop_rate)
-		while not rospy.is_shutdown():
-			# Update Map
-			costmap.reset_map()
+			loop_rate = rospy.get_param('ctrl_rate')
+			rate = rospy.Rate(loop_rate)
+			while not rospy.is_shutdown():
+				# Update Map
+				costmap.reset_map()
 
-			# Firstly register all vehicle positions
-			for car in car_list:
-				if not car.is_terminated():
-					state = car.get_state()
-					costmap.write_cost(state.x, state.y, state.psi, state.car_num)
-
-			# Then register parking maneuver if collision-free
-			for car in car_list:
-				if not car.is_terminated():
-					if car.not_collide(costmap):
-						if car.is_parking():
-							costmap.write_cost_maneuver(car)
-
-			costmap.pub_costmap()
-
-			# dead lock flag
-			dead_lock = True
-
-			# Control
-			for car in car_list:
-				if not car.is_terminated():
-					# Time increase
-					car.add_time()
-					if car.not_collide(costmap):
-						dead_lock = False
-						if car.is_parking():
-							car.drive_parking()
-						else:
-							car.drive_straight()
-					else:
-						car.add_wait_time()
-
-			# Dead lock resolution:
-			# Change a maneuver
-			if dead_lock:
-				print("Dead Lock")
+				# Firstly register all vehicle positions
 				for car in car_list:
-					if (not car.is_terminated()) and car.is_parking():
-						car.change_maneuver()
-						break
+					if not car.is_terminated():
+						state = car.get_state()
+						costmap.write_cost(state.x, state.y, state.psi, state.car_num)
 
-			# Check whether all cars are terminated
-			terminated_list = [car.is_terminated() for car in car_list]
-			if all(terminated_list):
-				# Get the waiting time
-				wait_time_list = [car.get_wait_time() for car in car_list]
+				# Then register parking maneuver if collision-free
+				for car in car_list:
+					if not car.is_terminated():
+						if car.not_collide(costmap):
+							if car.is_parking():
+								costmap.write_cost_maneuver(car)
 
-				# Record data
-				with open("/home/mpc/wait_time.csv", 'a+') as f:
-					writer = csv.writer(f)
-					writer.writerow(wait_time_list)
+				costmap.pub_costmap()
 
-				# Leave the while loop, end the program
-				break
+				# dead lock flag
+				dead_lock = True
 
-			rate.sleep()
+				# Control
+				for car in car_list:
+					if not car.is_terminated():
+						# Time increase
+						car.add_time()
+						if car.not_collide(costmap):
+							dead_lock = False
+							if car.is_parking():
+								car.drive_parking()
+							else:
+								car.drive_straight()
+						else:
+							car.add_wait_time()
+
+				# Dead lock resolution:
+				# Change a maneuver
+				if dead_lock:
+					print("Dead Lock")
+					for car in car_list:
+						if (not car.is_terminated()) and car.is_parking():
+							car.change_maneuver()
+							break
+
+				# Check whether all cars are terminated
+				terminated_list = [car.is_terminated() for car in car_list]
+				if all(terminated_list):
+					# Get the waiting time
+					wait_time_list = [car.get_wait_time() for car in car_list]
+
+					# Record data
+					with open("/home/mpc/wait_time.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow(wait_time_list)
+
+					# Leave the while loop, end the program
+					break
+
+				rate.sleep()
 
 def init_cars(is_random):
 	car_init_pub = rospy.Publisher('car_init', String, queue_size = 10)

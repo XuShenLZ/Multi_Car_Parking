@@ -1,11 +1,15 @@
 # The path for saving and loading H-OBCA path
 HOBCA_path: "/home/mpc/Multi_Car_Parking/workspace/src/H-OBCA"
+# Path for saving time data
+time_data_path: "/home/mpc/"
 
 # ========== Parameters for simulation ===========
 ctrl_rate: 10
 plot_rate: 100
 # Make manual choice about whether to solve the H-OBCA
 manual_choice: false
+# Random allocation or not
+is_random: True
 
 # ========== Parameters for parking lot ===========
 # Length of the parking lot
@@ -21,14 +25,16 @@ l_spot: 5.0
 
 # ========== Parameters for car ===========
 # The number of car
-total_number: 48
-# total_number: 8
+# total_number: 48
+total_number: 8
 # The dimension of the car
 # Reference point is the center of rear axis
 # (x_front, x_rear, y_left, y_right)
 ego: [ 3.7, 1, 1, 1]
 # Wheelbase
 L:   2.7
+# Parameter for exponential arrival
+exp_beta: 2
 
 # ========== Parameters for cost map ===========
 # Currently only integer and grid size 1 is allowed

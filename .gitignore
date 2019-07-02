@@ -9,3 +9,4 @@ workspace/build/
 # files
 *.sublime-project
 *.sublime-workspace
+*.pyc

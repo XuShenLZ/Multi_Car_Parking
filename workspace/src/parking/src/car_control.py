@@ -20,6 +20,12 @@ import pickle
 import spot_allocate
 
 # parameters
+# Whether it is randomly chosen
+is_random = rospy.get_param('is_random')
+
+# Data saving path
+time_data_path = rospy.get_param('time_data_path')
+
 # The length of the map
 l_map  = rospy.get_param('l_map')
 w_map  = rospy.get_param('w_map')
@@ -45,6 +51,9 @@ Map['l_spot'] = l_spot
 # The total amount of car
 total_number = rospy.get_param('total_number')
 
+# Parameter for exponential arrival
+exp_beta = rospy.get_param('exp_beta')
+
 # Vacant spot
 # Initially, all zero
 # The shape of matrix is the same as parking lot
@@ -61,7 +70,7 @@ class Vehicle(object):
 	# lane = "U": Upper lane, start from [-l_map/2,  w_lane/2]
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	# t0: The time the car starts to move
-	def __init__(self, car_num, lane, t0, x0, end_pose):
+	def __init__(self, car_num, lane, t0, x0, end_pose, control):
 		super(Vehicle, self).__init__()
 		# Car Number
 		self.car_num = car_num
@@ -113,19 +122,24 @@ class Vehicle(object):
 		self.turn[2] = self.turn[1] + 2*self.turn_offset_y
 		self.turn[3] = self.turn[2] + self.arc
 
-		# The goal stopping position on straight line
-		print("Allocation interval = %d" % interval)
-		# self.goal, self.end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
-		# self.goal, self.end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, interval)
-		# self.goal, self.end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
-		# self.goal, self.end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, interval)
-		# self.goal, self.end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
-		# self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
-		self.goal, self.end_spot = spot_allocate.random_assign_all(self, Map, spots_U, spots_L)
+		if control == True:
+			# The goal stopping position on straight line
+			print("Allocation interval = %d" % interval)
+			# self.goal, self.end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
+			# print("Deepest Strategy is used")
+			# self.goal, self.end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, interval)
+			# self.goal, self.end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
+			# print("Same Side Strategy is used")
+			# self.goal, self.end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, interval)
+			# print("Random Half Strategy is used")
+			# self.goal, self.end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
+			print("Solo Strategy is used")
+			self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
+			# print("Random All Strategy is used")
+			# self.goal, self.end_spot = spot_allocate.random_assign_all(self, Map, spots_U, spots_L)
 
-
-		self.end_pose = end_pose
-		self.get_maneuver(self.end_spot, self.end_pose)
+			self.end_pose = end_pose
+			self.get_maneuver(self.end_spot, self.end_pose)
 
 		# The longitudinal state for circular motion
 		self.s     = self.x
@@ -148,11 +162,12 @@ class Vehicle(object):
 		self.input_topicName = "input_%d" % car_num
 		self.park_topicName  = "park_%d" % car_num
 
-		# State publisher
-		self.state_pub = rospy.Publisher(self.state_topicName, car_state, queue_size = 10)
+		if control == True:
+			# State publisher
+			self.state_pub = rospy.Publisher(self.state_topicName, car_state, queue_size = 10)
 
-		# Parking maneuver publisher
-		self.maneuver_pub = rospy.Publisher(self.park_topicName, car_state, queue_size = 10)
+			# Parking maneuver publisher
+			self.maneuver_pub = rospy.Publisher(self.park_topicName, car_state, queue_size = 10)
 
 	def publish_state(self):
 		pub_data = car_state()
@@ -177,6 +192,9 @@ class Vehicle(object):
 
 	def get_wait_time(self):
 		return self.wait_t
+
+	def get_total_time(self):
+		return self.t - self.t0
 
 	def drive_straight(self):
 		# If the car has now reached the departure time
@@ -460,8 +478,8 @@ def main():
 		for rep in range(20):
 			print('Currently it is #%d iteration' % rep)
 
-			is_random = True
-			# is_random = False
+			# The total time to finish the whole task
+			total_task_time = 0
 
 			car_list = init_cars(is_random)
 			# ipdb.set_trace()
@@ -473,6 +491,9 @@ def main():
 			loop_rate = rospy.get_param('ctrl_rate')
 			rate = rospy.Rate(loop_rate)
 			while not rospy.is_shutdown():
+				# Add a total time
+				total_task_time += 0.1
+
 				# Update Map
 				costmap.reset_map()
 
@@ -527,6 +548,21 @@ def main():
 				# record the data an exit
 				if dead_lock_count > 1:
 					print("Dead Lock is not resolved. Exiting... Please refer to the saved data file for information")
+					
+					# Mark something in the CSV file
+					dead_lock_mark = [-1]
+					with open(time_data_path + "wait_time.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow(dead_lock_mark)
+
+					with open(time_data_path + "total_time.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow(dead_lock_mark)
+
+					with open(time_data_path + "task_time.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow(dead_lock_mark)
+
 					break
 
 
@@ -537,9 +573,22 @@ def main():
 					wait_time_list = [car.get_wait_time() for car in car_list]
 
 					# Record data
-					with open("/home/mpc/wait_time.csv", 'a+') as f:
+					with open(time_data_path + "wait_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow(wait_time_list)
+
+					# Get the total time for each car
+					total_time_list = [car.get_total_time() for car in car_list]
+
+					# Record data
+					with open(time_data_path + "total_time.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow(total_time_list)
+
+					# Record the time for the entire task
+					with open(time_data_path + "task_time.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow([total_task_time])
 
 					# Leave the while loop, end the program
 					break
@@ -616,7 +665,7 @@ def init_cars(is_random):
 					x0 = min(-l_map/2, last_car_state.x - 5)
 
 			# Initial each car object
-			car = Vehicle(car_num, lane, t0, x0, end_pose)
+			car = Vehicle(car_num, lane, t0, x0, end_pose, True)
 
 			car_list.append(car)
 			lane_string += lane
@@ -658,7 +707,7 @@ def init_cars(is_random):
 		for car_num in range(total_number):
 			# Initial each car object
 			car = Vehicle(car_num, lane_list[car_num], \
-				t0_list[car_num], x0_list[car_num], end_pose_list[car_num])
+				t0_list[car_num], x0_list[car_num], end_pose_list[car_num], True)
 
 			car_list.append(car)
 			lane_string += lane_list[car_num]
@@ -670,7 +719,8 @@ def init_cars(is_random):
 def random_start():
 	# The arrival time for car is exponentially distributed
 	# And round to 0.1 
-	dt = round(np.random.exponential(2), 1)
+	dt = round(np.random.exponential(exp_beta), 1)
+	print("Exp distr with beta = %d" % exp_beta)
 	# dt = random.randint(1,10)
 
 

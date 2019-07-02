@@ -19,6 +19,11 @@ Multi Car and High Density Parking Coodination
 
 
 ## Update log
+### 07/02/2019
+1. **[large-map branch]** Fixed the problem that the car plot node asks for allocation and maneuver again. Now only control node is doing these;
+2. **[large-map branch]** Moved the path parameter to the yaml file, so that the tuning is easier. Also the `is_random` option is moved there as well.
+3. **[large-map branch]** Record the total time of each vehicle, total time of entire task as well. When dead lock can not be solved, pass this iteration and record "-1" to these data files.
+
 ### 06/30/2019
 1. **[large-map branch]** Fixed the data saving function so that the weird dead lock can be investigated
 2. **[large-map branch]** Added random_all strategy which select randomly in all free spots.

@@ -148,7 +148,7 @@ class CarSubscriber(Vehicle):
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	def __init__(self, car_num, lane):
 		# From Base Class
-		Vehicle.__init__(self, car_num, lane, 0, l_map, "F", False)
+		Vehicle.__init__(self, car_num, lane, 0, l_map, "F", 0, False)
 
 		self.rest_park = car_state()
 		self.rest_park.x = []

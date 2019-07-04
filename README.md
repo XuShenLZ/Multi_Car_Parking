@@ -19,6 +19,10 @@ Multi Car and High Density Parking Coodination
 
 
 ## Update log
+### 07/03/2019
+1. **[large-map branch]** Fixed the starting position of vehicles. Now after the arrival time, vehicles will be following the front one in the queue or at the gate if there is no queue outside.
+2. **[large-map branch]** Record the queue length to file.
+
 ### 07/02/2019
 1. **[large-map branch]** Fixed the problem that the car plot node asks for allocation and maneuver again. Now only control node is doing these;
 2. **[large-map branch]** Moved the path parameter to the yaml file, so that the tuning is easier. Also the `is_random` option is moved there as well.

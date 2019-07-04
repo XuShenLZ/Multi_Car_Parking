@@ -70,10 +70,13 @@ class Vehicle(object):
 	# lane = "U": Upper lane, start from [-l_map/2,  w_lane/2]
 	# lane = "L": Lower lane, start from [-l_map/2, -w_lane/2]
 	# t0: The time the car starts to move
-	def __init__(self, car_num, lane, t0, x0, end_pose, control):
+	def __init__(self, car_num, lane, t0, x0, end_pose, front_num, control):
 		super(Vehicle, self).__init__()
 		# Car Number
 		self.car_num = car_num
+
+		# The car_num which is in front of it
+		self.front_num = front_num
 
 		# Lane info
 		self.lane = lane
@@ -196,10 +199,12 @@ class Vehicle(object):
 	def get_total_time(self):
 		return self.t - self.t0
 
-	def drive_straight(self):
+	def drive_straight(self, car_list):
 		# If the car has now reached the departure time
 		if self.t < self.t0:
-			# self.t += 1
+			front_car_state = car_list[self.front_num].get_state()
+			self.s = min(-l_map/2, front_car_state.s) - 5
+			self.x = self.s
 			return
 
 		# goal is the s value of parking starting point
@@ -486,7 +491,8 @@ def main():
 
 			costmap = CostMap()
 
-			dead_lock_count = 0
+			dead_lock_count  = 0
+			max_queue_length = 0
 
 			loop_rate = rospy.get_param('ctrl_rate')
 			rate = rospy.Rate(loop_rate)
@@ -497,11 +503,25 @@ def main():
 				# Update Map
 				costmap.reset_map()
 
+				# Measure queue length
+				queue_length = [0, 0]
+
 				# Firstly register all vehicle positions
+				# And count queue length
 				for car in car_list:
 					if not car.is_terminated():
 						state = car.get_state()
 						costmap.write_cost(state.x, state.y, state.psi, state.car_num)
+
+						# Queue length
+						if state.s < -l_map/2 and state.t > state.t0:
+							if state.lane == "U":
+								queue_length[0] += 1
+							else:
+								queue_length[1] += 1
+
+				# Write the max queue length
+				max_queue_length = max(max_queue_length, max(queue_length))
 
 				# Then register parking maneuver if collision-free
 				for car in car_list:
@@ -525,7 +545,7 @@ def main():
 							if car.is_parking():
 								car.drive_parking()
 							else:
-								car.drive_straight()
+								car.drive_straight(car_list)
 						else:
 							car.add_wait_time()
 
@@ -550,7 +570,7 @@ def main():
 					print("Dead Lock is not resolved. Exiting... Please refer to the saved data file for information")
 					
 					# Mark something in the CSV file
-					dead_lock_mark = [-1]
+					dead_lock_mark = [-1 for car in car_list]
 					with open(time_data_path + "wait_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow(dead_lock_mark)
@@ -561,7 +581,11 @@ def main():
 
 					with open(time_data_path + "task_time.csv", 'a+') as f:
 						writer = csv.writer(f)
-						writer.writerow(dead_lock_mark)
+						writer.writerow([-1])
+
+					with open(time_data_path + "queue_length.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow([-1])
 
 					break
 
@@ -589,6 +613,10 @@ def main():
 					with open(time_data_path + "task_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow([total_task_time])
+
+					with open(time_data_path + "queue_length.csv", 'a+') as f:
+						writer = csv.writer(f)
+						writer.writerow([max_queue_length])
 
 					# Leave the while loop, end the program
 					break
@@ -631,12 +659,13 @@ def init_cars(is_random):
 
 	if is_random:
 		# If the initialization is done by random
-		lane_list     = []
-		t0_list       = []
-		x0_list       = []
-		end_pose_list = []
-		end_spot_list = []
-		goal_list     = []
+		lane_list      = []
+		t0_list        = []
+		x0_list        = []
+		end_pose_list  = []
+		end_spot_list  = []
+		goal_list      = []
+		front_num_list = []
 
 		for car_num in range(total_number):
 			# Generate the starting time,
@@ -644,6 +673,7 @@ def init_cars(is_random):
 			dt, lane, end_pose = random_start()
 			# Allocate the end spot for each car
 			print(car_num)
+			front_num = 0
 			if lane == "U":
 				t0_U += dt
 				t0 = t0_U
@@ -655,6 +685,7 @@ def init_cars(is_random):
 					# Following the last vehicle in this lane
 					# But must outside the lot
 					x0 = min(-l_map/2, last_car_state.x - 5)
+					front_num = last_car_state.car_num
 			else:
 				t0_L += dt
 				t0 = t0_L
@@ -663,9 +694,10 @@ def init_cars(is_random):
 				else:
 					last_car_state = car_list_L[-1].get_state()
 					x0 = min(-l_map/2, last_car_state.x - 5)
+					front_num = last_car_state.car_num
 
 			# Initial each car object
-			car = Vehicle(car_num, lane, t0, x0, end_pose, True)
+			car = Vehicle(car_num, lane, t0, x0, end_pose, front_num, True)
 
 			car_list.append(car)
 			lane_string += lane
@@ -684,11 +716,14 @@ def init_cars(is_random):
 			goal_list.append(state.goal)
 			end_spot_list.append(state.end_spot)
 
+			front_num_list.append(front_num)
+
 		# Save the variables
 		with open('init_data.pickle', 'w') as f:
 			pickle.dump([t0_list, x0_list, lane_list, \
 						end_pose_list, \
-						end_spot_list], f)
+						end_spot_list, \
+						front_num_list], f)
 
 		print("Init Data Saved.")
 
@@ -701,13 +736,16 @@ def init_cars(is_random):
 	else:
 		# If we need to recover the last settings
 		with open('init_data.pickle') as f:
-			t0_list, x0_list, lane_list, end_pose_list, \
-				end_spot_list = pickle.load(f)
+			t0_list, x0_list, lane_list, \
+			end_pose_list, end_spot_list, \
+			front_num_list = pickle.load(f)
 
 		for car_num in range(total_number):
 			# Initial each car object
 			car = Vehicle(car_num, lane_list[car_num], \
-				t0_list[car_num], x0_list[car_num], end_pose_list[car_num], True)
+				t0_list[car_num], x0_list[car_num], \
+				end_pose_list[car_num], \
+				front_num_list[car_num], True)
 
 			car_list.append(car)
 			lane_string += lane_list[car_num]

@@ -648,21 +648,21 @@ def init_cars(is_random):
 	spots_U, spots_L = init_occupancy(rand_occupy)
 	spot_list = []
 
-	occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
-	for x in occupied:
-		spots_U[0, x] = 1
+	# occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
+	# for x in occupied:
+	# 	spots_U[0, x] = 1
 
-	occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
-	for x in occupied:
-		spots_U[1, x] = 1
+	# occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
+	# for x in occupied:
+	# 	spots_U[1, x] = 1
 
-	occupied = [0, 2, 5, 6, 8, 12, 14, 15]
-	for x in occupied:
-		spots_L[0, x] = 1
+	# occupied = [0, 2, 5, 6, 8, 12, 14, 15]
+	# for x in occupied:
+	# 	spots_L[0, x] = 1
 
-	occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
-	for x in occupied:
-		spots_L[1, x] = 1
+	# occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
+	# for x in occupied:
+	# 	spots_L[1, x] = 1
 
 	car_list = []
 
@@ -796,17 +796,20 @@ def init_occupancy(rand_occupy):
 
 	# If randomly generating occupancy
 	else:
-		num_occupied = 88 - total_number
-		loc_occupied = random.sample(range(88), num_occupied)
+		# Totally 88 spots and 4 spots at the upper right corner
+		# are fixed since it is hard for maneuver after turning
+		spots_U[0:2, 20:22] = 1
+		num_occupied = 84 - total_number
+		loc_occupied = random.sample(range(84), num_occupied)
 		for x in loc_occupied:
-			if x<= 21:
+			if x<= 19:
 				spots_U[0, x] = 1
-			elif 21<x and x<= 43:
-				spots_U[1, x-22] = 1
-			elif 43<x and x<=65:
-				spots_L[0, x-44] = 1
+			elif 19<x and x<= 39:
+				spots_U[1, x-20] = 1
+			elif 39<x and x<=61:
+				spots_L[0, x-40] = 1
 			else:
-				spots_L[1, x-66] = 1
+				spots_L[1, x-62] = 1
 
 	pub_data = Int16MultiArray()
 	pub_data.data = list(spots_U.flat)

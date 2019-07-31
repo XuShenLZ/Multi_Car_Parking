@@ -10,7 +10,7 @@ manual_choice: false
 # Random allocation or not
 is_random: True
 # Random occupancy or not
-rand_occupy: False
+rand_occupy: True
 # Interval range, [itv_low, itv_high)
 itv_low:  1
 itv_high: 13
@@ -40,8 +40,8 @@ l_spot: 5.0
 
 # ========== Parameters for car ===========
 # The number of car
-# total_number: 48
-total_number: 8
+total_number: 48
+# total_number: 8
 # The dimension of the car
 # Reference point is the center of rear axis
 # (x_front, x_rear, y_left, y_right)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16MultiArray
 from parking.msg import car_state, car_input, cost_map
 from car_control import Vehicle, CostMap
 
@@ -35,25 +35,34 @@ L_ev = ego[0]+ego[2]
 w = W_ev/2;
 offset = np.array([L_ev/2 - ego[2], 0])
 
+# Initial Occupancy Subscriber
 spots_U = np.zeros((2, 22), dtype=int)
-
-occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
-for x in occupied:
-	spots_U[0, x] = 1
-
-occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
-for x in occupied:
-	spots_U[1, x] = 1
-
 spots_L = np.zeros((2, 22), dtype=int)
 
-occupied = [0, 2, 5, 6, 8, 12, 14, 15]
-for x in occupied:
-	spots_L[0, x] = 1
+def occupy_cb(data):
+	global spots_U, spots_L
+	flat_data = data.data
+	spots_U = np.array(flat_data[0 :44]).reshape(2, 22)
+	spots_L = np.array(flat_data[44:88]).reshape(2, 22)
 
-occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
-for x in occupied:
-	spots_L[1, x] = 1
+rospy.Subscriber('occup_init', Int16MultiArray, occupy_cb)
+
+# occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
+# for x in occupied:
+# 	spots_U[0, x] = 1
+
+# occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
+# for x in occupied:
+# 	spots_U[1, x] = 1
+
+
+# occupied = [0, 2, 5, 6, 8, 12, 14, 15]
+# for x in occupied:
+# 	spots_L[0, x] = 1
+
+# occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
+# for x in occupied:
+# 	spots_L[1, x] = 1
 
 # =============== MAP Plotting ===============
 def plot_map():
@@ -96,6 +105,7 @@ def plot_map():
 	plt.plot([l_map/2, l_map/2+3*w_spot], [w_lane+l_spot+w_map, w_lane+l_spot+w_map], 'k', linewidth=3.0)
 
 	########## Steady Vehicles ###########
+	global spots_U, spots_L
 	length = spots_L.shape[1]
 	for x in range(length):
 		if spots_U[0, x] == 1:

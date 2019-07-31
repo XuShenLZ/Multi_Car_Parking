@@ -9,16 +9,23 @@ Multi Car and High Density Parking Coodination
 5. Install Julia 0.6.4 (For H-OBCA):
 	1. Download the package: `wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz`
 	2. Extract the package
-	3. Add it to system environment: `sudo ln -s ~/path~to~julia~/bin/julia /usr/local/bin/julia`
-	4. Inside Julia, install `RobotOS`, `JuMP`, `Ipopt`, `PyPlot`, `NearestNeighbors`, `ControlSystems`, `JLD`
-	5. Inside Julia, change the Python version to 2.7: `ENV["PYTHON"]="/usr/bin/python2.7"` and `Pkg.build("PyCall")`
+	3. Add Julia to system environment: `sudo ln -s ~/path~to~julia~/bin/julia /usr/local/bin/julia`
+	4. Inside Julia, change the Python version to 2.7: `ENV["PYTHON"]="/usr/bin/python2.7"` and `Pkg.build("PyCall")`
+	5. Inside Julia, install `RobotOS`, `JuMP`, `Ipopt`, `PyPlot`, `NearestNeighbors`, `ControlSystems`, `JLD`
 6. Install python dependencies
 	1. (For Debug) `pip install ipdb`
 7. Clone the git repository, and add `--recursive` property
-8. Change the H-OBCA path and CSV saving path in ".../src/parking/launch/parking_parameters.yaml" and "car_control.py"
+8. Change the H-OBCA path in ".../src/parking/launch/parking_parameters.yaml" if this repository is not directly in home path
+9. Inside the workspace, use `catkin_make` and `source devel/setup.bash`
+10. Run `roslaunch parking parking_simulator.launch disp:=true` the `disp` property is set to be true if graphic output is needed
 
 
 ## Update log
+### 07/30/2019
+1. Moved all simulation control into yaml file, no need to open `car_control.py` to edit.
+2. The data path will be automatically captured if the repository is under home path.
+3. The initial occupancy can be generated randomly with a ratio. (half-way done)
+
 ### 07/03/2019
 1. **[large-map branch]** Fixed the starting position of vehicles. Now after the arrival time, vehicles will be following the front one in the queue or at the gate if there is no queue outside.
 2. **[large-map branch]** Record the queue length to file.

@@ -1,7 +1,6 @@
 # The path for saving and loading H-OBCA path
-HOBCA_path: "/home/mpc/Multi_Car_Parking/workspace/src/H-OBCA"
-# Path for saving time data
-time_data_path: "/home/mpc/"
+# Should do nothing if Multi_Car_Parking is under home dir
+HOBCA_path: "/Multi_Car_Parking/workspace/src/H-OBCA"
 
 # ========== Parameters for simulation ===========
 ctrl_rate: 10
@@ -10,6 +9,22 @@ plot_rate: 100
 manual_choice: false
 # Random allocation or not
 is_random: True
+# Random occupancy or not
+rand_occupy: False
+# Interval range, [itv_low, itv_high)
+itv_low:  1
+itv_high: 13
+# Number of repetation
+num_rep: 100
+
+# Assignment policy
+# 1-Paired(Deepest)
+# 2-Single(Solo)
+# 3-Random(Random All)
+assign_policy: 1
+
+# Lane opening
+lane_open: 2
 
 # ========== Parameters for parking lot ===========
 # Length of the parking lot
@@ -25,8 +40,8 @@ l_spot: 5.0
 
 # ========== Parameters for car ===========
 # The number of car
-total_number: 48
-# total_number: 8
+# total_number: 48
+total_number: 8
 # The dimension of the car
 # Reference point is the center of rear axis
 # (x_front, x_rear, y_left, y_right)

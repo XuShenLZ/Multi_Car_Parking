@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16MultiArray
 from parking.msg import car_state, car_input, cost_map
 from parking.srv import maneuver
 import math
 import time
+import os
 import random
 import numpy as np
 
@@ -20,11 +21,24 @@ import pickle
 import spot_allocate
 
 # parameters
-# Whether it is randomly chosen
+# Whether the lane and maneuver are randomly chosen
 is_random = rospy.get_param('is_random')
+# Whether the initial occupancy is randomly chosen
+rand_occupy = rospy.get_param('rand_occupy')
 
-# Data saving path
-time_data_path = rospy.get_param('time_data_path')
+# Range and number of iterations
+itv_low   = rospy.get_param('itv_low')
+itv_high  = rospy.get_param('itv_high')
+num_rep   = rospy.get_param('num_rep')
+
+# Assignment policy
+assign_policy = rospy.get_param('assign_policy')
+
+# Lane Opening
+lane_open = rospy.get_param('lane_open')
+
+# Data saving path, at the home path of user
+time_data_path = os.environ['HOME']
 
 # The length of the map
 l_map  = rospy.get_param('l_map')
@@ -129,17 +143,20 @@ class Vehicle(object):
 			# The goal stopping position on straight line
 			print("Allocation interval = %d" % interval)
 			# self.goal, self.end_spot = spot_allocate.deepest(self, Map, spots_U, spots_L)
-			# print("Deepest Strategy is used")
-			# self.goal, self.end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, interval)
 			# self.goal, self.end_spot = spot_allocate.same_side(self, Map, spots_U, spots_L)
 			# print("Same Side Strategy is used")
 			# self.goal, self.end_spot = spot_allocate.same_side_n(self, Map, spots_U, spots_L, interval)
 			# print("Random Half Strategy is used")
 			# self.goal, self.end_spot = spot_allocate.random_assign(self, Map, spots_U, spots_L)
-			print("Solo Strategy is used")
-			self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
-			# print("Random All Strategy is used")
-			# self.goal, self.end_spot = spot_allocate.random_assign_all(self, Map, spots_U, spots_L)
+			if assign_policy == 1:
+				print("Paried Assign Policy is used")
+				self.goal, self.end_spot = spot_allocate.deepest_n(self, Map, spots_U, spots_L, interval)
+			elif assign_policy == 2:
+				print("Single Assign Policy is used")
+				self.goal, self.end_spot = spot_allocate.solo_n(self, Map, spots_U, spots_L, spot_list, interval)
+			else:
+				print("Random Assign Policy Strategy is used")
+				self.goal, self.end_spot = spot_allocate.random_assign_all(self, Map, spots_U, spots_L)
 
 			self.end_pose = end_pose
 			self.get_maneuver(self.end_spot, self.end_pose)
@@ -478,9 +495,9 @@ def main():
 	global interval
 
 	# To iterate over all interval sizes
-	for itv in range(1,13):
+	for itv in range(itv_low,itv_high):
 		interval = itv
-		for rep in range(20):
+		for rep in range(num_rep):
 			print('Currently it is #%d iteration' % rep)
 
 			# The total time to finish the whole task
@@ -571,19 +588,19 @@ def main():
 					
 					# Mark something in the CSV file
 					dead_lock_mark = [-1 for car in car_list]
-					with open(time_data_path + "wait_time.csv", 'a+') as f:
+					with open(time_data_path + "/wait_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow(dead_lock_mark)
 
-					with open(time_data_path + "total_time.csv", 'a+') as f:
+					with open(time_data_path + "/total_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow(dead_lock_mark)
 
-					with open(time_data_path + "task_time.csv", 'a+') as f:
+					with open(time_data_path + "/task_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow([-1])
 
-					with open(time_data_path + "queue_length.csv", 'a+') as f:
+					with open(time_data_path + "/queue_length.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow([-1])
 
@@ -597,7 +614,7 @@ def main():
 					wait_time_list = [car.get_wait_time() for car in car_list]
 
 					# Record data
-					with open(time_data_path + "wait_time.csv", 'a+') as f:
+					with open(time_data_path + "/wait_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow(wait_time_list)
 
@@ -605,16 +622,16 @@ def main():
 					total_time_list = [car.get_total_time() for car in car_list]
 
 					# Record data
-					with open(time_data_path + "total_time.csv", 'a+') as f:
+					with open(time_data_path + "/total_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow(total_time_list)
 
 					# Record the time for the entire task
-					with open(time_data_path + "task_time.csv", 'a+') as f:
+					with open(time_data_path + "/task_time.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow([total_task_time])
 
-					with open(time_data_path + "queue_length.csv", 'a+') as f:
+					with open(time_data_path + "/queue_length.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow([max_queue_length])
 
@@ -628,8 +645,7 @@ def init_cars(is_random):
 
 	# Reset the occupancy map
 	global spots_U, spots_L, spot_list
-	spots_U = np.zeros((2, 22), dtype=int)
-	spots_L = np.zeros((2, 22), dtype=int)
+	spots_U, spots_L = init_occupancy(rand_occupy)
 	spot_list = []
 
 	occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
@@ -754,6 +770,52 @@ def init_cars(is_random):
 
 	return car_list
 
+def init_occupancy(rand_occupy):
+	occup_init_pub = rospy.Publisher('occup_init', Int16MultiArray, queue_size = 10)
+
+	spots_U = np.zeros((2, 22), dtype=int)
+	spots_L = np.zeros((2, 22), dtype=int)
+
+	# If using the fixed occupancy
+	if not rand_occupy:
+		loc_occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
+		for x in loc_occupied:
+			spots_U[0, x] = 1
+
+		loc_occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
+		for x in loc_occupied:
+			spots_U[1, x] = 1
+
+		loc_occupied = [0, 2, 5, 6, 8, 12, 14, 15]
+		for x in loc_occupied:
+			spots_L[0, x] = 1
+
+		loc_occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
+		for x in loc_occupied:
+			spots_L[1, x] = 1
+
+	# If randomly generating occupancy
+	else:
+		num_occupied = 88 - total_number
+		loc_occupied = random.sample(range(88), num_occupied)
+		for x in loc_occupied:
+			if x<= 21:
+				spots_U[0, x] = 1
+			elif 21<x and x<= 43:
+				spots_U[1, x-22] = 1
+			elif 43<x and x<=65:
+				spots_L[0, x-44] = 1
+			else:
+				spots_L[1, x-66] = 1
+
+	pub_data = Int16MultiArray()
+	pub_data.data = list(spots_U.flat)
+	pub_data.data += list(spots_L.flat)
+	occup_init_pub.publish(pub_data)
+
+	return spots_U, spots_L
+
+
 def random_start():
 	# The arrival time for car is exponentially distributed
 	# And round to 0.1 
@@ -765,8 +827,11 @@ def random_start():
 	# Choose the lane randomly
 	if random.random() >= 0.5:
 		lane = "U"
-	else: 
-		lane = "L"
+	else:
+		if lane_open == 2:
+			lane = "L"
+		else:
+			lane = "U"
 
 	# Choose the end pose randomly
 	if random.random() >= 0.5:

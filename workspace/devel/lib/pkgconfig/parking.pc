@@ -1,8 +1,8 @@
-prefix=/home/mpc/Multi_Car_Parking/workspace/devel
+prefix=/home/xushen/Multi_Car_Parking/workspace/devel
 
 Name: parking
 Description: Description of parking
 Version: 0.0.0
-Cflags: -I/home/mpc/Multi_Car_Parking/workspace/devel/include
-Libs: -L/home/mpc/Multi_Car_Parking/workspace/devel/lib 
+Cflags: -I/home/xushen/Multi_Car_Parking/workspace/devel/include
+Libs: -L/home/xushen/Multi_Car_Parking/workspace/devel/lib 
 Requires: message_runtime

@@ -100,20 +100,61 @@ def plot_map():
 	for x in range(length):
 		if spots_U[0, x] == 1:
 			centerCar = [(x+0.5)*w_spot-l_map/2, 1.5*w_map - 0.5*l_spot]
-			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			car1, car2, car3, car4 = car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			plt.fill([car1[0], car2[0], car4[0], car3[0]], [car1[1], car2[1], car4[1], car3[1]], 'orange')
 
 		if spots_U[1, x] == 1:
 			centerCar = [(x+0.5)*w_spot-l_map/2, w_map/2 + 0.5*l_spot]
-			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			car1, car2, car3, car4 = car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			plt.fill([car1[0], car2[0], car4[0], car3[0]], [car1[1], car2[1], car4[1], car3[1]], 'orange')
 
 		if spots_L[0, x] == 1:
 			centerCar = [(x+0.5)*w_spot-l_map/2, w_map/2 - 0.5*l_spot]
-			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			car1, car2, car3, car4 = car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			plt.fill([car1[0], car2[0], car4[0], car3[0]], [car1[1], car2[1], car4[1], car3[1]], 'orange')
 
 		if spots_L[1, x] == 1:
 			centerCar = [(x+0.5)*w_spot-l_map/2, -w_map/2 + 0.5*l_spot]
-			car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			car1, car2, car3, car4 = car_box(centerCar, math.pi/2, W_ev/2, L_ev/2, 'orange')
+			plt.fill([car1[0], car2[0], car4[0], car3[0]], [car1[1], car2[1], car4[1], car3[1]], 'orange')
 
+	###############
+	# Plot center lines
+	theta_low = np.linspace(-np.pi/2, 0, 100)
+	theta_hig = np.linspace(0,  np.pi/2, 100)
+	# Firstly the inside lane
+	R = (l_spot + w_lane) / 2
+	line, = plt.plot([-l_map/2, l_map/2], [w_lane/2, w_lane/2], '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+	line, = plt.plot([-l_map/2, l_map/2], [0+w_map-w_lane/2, 0+w_map-w_lane/2], '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+
+	xx, yy = np.cos(theta_low)*R + l_map/2, np.sin(theta_low)*R + w_map/2 - l_spot/2
+	line, = plt.plot(xx, yy, '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+	xx, yy = np.cos(theta_hig)*R + l_map/2, np.sin(theta_hig)*R + w_map/2 + l_spot/2
+	line, = plt.plot(xx, yy, '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+
+	line, = plt.plot([l_map/2+R, l_map/2+R], [w_map/2-l_spot/2, w_map/2+l_spot/2], '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+
+	# Then the outside lane
+	R = (l_spot + w_lane) / 2 + w_lane
+	line, = plt.plot([-l_map/2, l_map/2], [-w_lane/2, -w_lane/2], '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+	line, = plt.plot([-l_map/2, l_map/2], [0+w_map+w_lane/2, 0+w_map+w_lane/2], '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+
+	xx, yy = np.cos(theta_low)*R + l_map/2, np.sin(theta_low)*R + w_map/2 - l_spot/2
+	line, = plt.plot(xx, yy, '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+	xx, yy = np.cos(theta_hig)*R + l_map/2, np.sin(theta_hig)*R + w_map/2 + l_spot/2
+	line, = plt.plot(xx, yy, '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
+
+	line, = plt.plot([l_map/2+R, l_map/2+R], [w_map/2-l_spot/2, w_map/2+l_spot/2], '-.m', linewidth=2.0)
+	line.set_dashes((20,3,3,3))
 
 	###############
 	# Plot properties
@@ -136,6 +177,8 @@ def car_box(x0,phi,w,l, color='b'):
 	car4 = x0 - np.array([np.cos(phi)*l, np.sin(phi)*l]) - np.array([np.sin(phi)*w, -np.cos(phi)*w])
 	plt.plot([car1[0],car2[0],car4[0],car3[0],car1[0]],[car1[1],car2[1],car4[1],car3[1],car1[1]],color, linewidth=2.0)
 	plt.xlim(-40, 50)
+
+	return car1, car2, car3, car4
 	# plt.draw()
 
 # =============== End Car Box ==============
@@ -295,7 +338,7 @@ def main():
 	while not rospy.is_shutdown():
 		plot_map()
 
-		costmap.plot_costmap()
+		# costmap.plot_costmap()
 
 		car_simulator.plot_update()
 		plt.hold(False)

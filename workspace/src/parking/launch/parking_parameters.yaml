@@ -12,8 +12,8 @@ is_random: True
 # Random occupancy or not
 rand_occupy: False
 # Interval range, [itv_low, itv_high)
-itv_low:  1
-itv_high: 13
+itv_low:  4
+itv_high: 5
 # Number of repetation
 num_rep: 100
 
@@ -40,8 +40,8 @@ l_spot: 5.0
 
 # ========== Parameters for car ===========
 # The number of car
-# total_number: 48
-total_number: 8
+total_number: 48
+# total_number: 8
 # The dimension of the car
 # Reference point is the center of rear axis
 # (x_front, x_rear, y_left, y_right)

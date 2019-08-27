@@ -21,6 +21,10 @@ Multi Car and High Density Parking Coodination
 
 
 ## Update log
+### 08/27/2019
+1. Added center line to the plot.
+2. Filled the occupied spots.
+
 ### 07/30/2019
 1. Moved all simulation control into yaml file, no need to open `car_control.py` to edit.
 2. The data path will be automatically captured if the repository is under home path.

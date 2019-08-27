@@ -39,30 +39,31 @@ offset = np.array([L_ev/2 - ego[2], 0])
 spots_U = np.zeros((2, 22), dtype=int)
 spots_L = np.zeros((2, 22), dtype=int)
 
+# For fixed occupancy
+occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
+for x in occupied:
+	spots_U[0, x] = 1
+
+occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
+for x in occupied:
+	spots_U[1, x] = 1
+
+occupied = [0, 2, 5, 6, 8, 12, 14, 15]
+for x in occupied:
+	spots_L[0, x] = 1
+
+occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
+for x in occupied:
+	spots_L[1, x] = 1
+
 def occupy_cb(data):
+	print('cbcbcbcb')
 	global spots_U, spots_L
 	flat_data = data.data
 	spots_U = np.array(flat_data[0 :44]).reshape(2, 22)
 	spots_L = np.array(flat_data[44:88]).reshape(2, 22)
 
 rospy.Subscriber('occup_init', Int16MultiArray, occupy_cb)
-
-# occupied = [5, 8, 9, 14, 16, 17, 19, 20, 21]
-# for x in occupied:
-# 	spots_U[0, x] = 1
-
-# occupied = [5, 8, 9, 11, 12, 14, 15, 17, 20, 21]
-# for x in occupied:
-# 	spots_U[1, x] = 1
-
-
-# occupied = [0, 2, 5, 6, 8, 12, 14, 15]
-# for x in occupied:
-# 	spots_L[0, x] = 1
-
-# occupied = [0, 1, 2, 3, 4, 6, 10, 11, 12, 13, 17, 18, 20]
-# for x in occupied:
-# 	spots_L[1, x] = 1
 
 # =============== MAP Plotting ===============
 def plot_map():

@@ -10,7 +10,7 @@ manual_choice: false
 # Random allocation or not
 is_random: True
 # Random occupancy or not
-rand_occupy: False
+rand_occupy: True
 # Interval range, [itv_low, itv_high)
 itv_low:  4
 itv_high: 5

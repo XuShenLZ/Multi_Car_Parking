@@ -28,7 +28,7 @@ Multi Car and High Density Parking Coodination
 ### 07/30/2019
 1. Moved all simulation control into yaml file, no need to open `car_control.py` to edit.
 2. The data path will be automatically captured if the repository is under home path.
-3. The initial occupancy can be generated randomly with a ratio. (half-way done)
+3. The initial occupancy can be generated randomly after specifiying the number of vacant spots for incoming vehicles.
 
 ### 07/03/2019
 1. **[large-map branch]** Fixed the starting position of vehicles. Now after the arrival time, vehicles will be following the front one in the queue or at the gate if there is no queue outside.

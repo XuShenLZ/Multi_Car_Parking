@@ -513,6 +513,13 @@ def main():
 
 			loop_rate = rospy.get_param('ctrl_rate')
 			rate = rospy.Rate(loop_rate)
+
+			# ============ For Carla Replay
+			# Lists of time and trajectroy
+			time_list  = []
+			state_list = []
+			input_list = []
+
 			while not rospy.is_shutdown():
 				# Add a total time
 				total_task_time += 0.1
@@ -523,11 +530,20 @@ def main():
 				# Measure queue length
 				queue_length = [0, 0]
 
+				# Reset the state and input of all vehicles at current time step
+				state_current = []
+				input_current = []
+
 				# Firstly register all vehicle positions
 				# And count queue length
 				for car in car_list:
+					state = car.get_state()
+
+					# Log into the state sequence
+					state_current.append({'x': state.x, 'y': state.y, 'psi': state.psi, 'v': state.v})
+					input_current.append({'delta': state.delta, 'acc': state.acc})
+
 					if not car.is_terminated():
-						state = car.get_state()
 						costmap.write_cost(state.x, state.y, state.psi, state.car_num)
 
 						# Queue length
@@ -606,6 +622,10 @@ def main():
 
 					break
 
+				# Log the time and trajectory
+				time_list.append(total_task_time)
+				state_list.append(state_current)
+				input_list.append(input_current)
 
 				# Check whether all cars are terminated
 				terminated_list = [car.is_terminated() for car in car_list]
@@ -634,6 +654,10 @@ def main():
 					with open(time_data_path + "/queue_length.csv", 'a+') as f:
 						writer = csv.writer(f)
 						writer.writerow([max_queue_length])
+
+					# Record the trajectory into the pickle file
+					with open(time_data_path + '/trajectory.pickle', 'w') as f:
+						pickle.dump([time_list, state_list, input_list], f)
 
 					# Leave the while loop, end the program
 					break

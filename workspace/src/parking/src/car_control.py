@@ -521,9 +521,6 @@ def main():
 			input_list = []
 
 			while not rospy.is_shutdown():
-				# Add a total time
-				total_task_time += 0.1
-
 				# Update Map
 				costmap.reset_map()
 
@@ -662,6 +659,9 @@ def main():
 					# Leave the while loop, end the program
 					break
 
+				# Add a total time
+				total_task_time += 0.1
+				
 				rate.sleep()
 
 def init_cars(is_random):

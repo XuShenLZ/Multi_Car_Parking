@@ -219,9 +219,9 @@ class Vehicle(object):
 	def drive_straight(self, car_list):
 		# If the car has now reached the departure time
 		if self.t < self.t0:
-			front_car_state = car_list[self.front_num].get_state()
-			self.s = min(-l_map/2, front_car_state.s) - 5
-			self.x = self.s
+			# front_car_state = car_list[self.front_num].get_state()
+			# self.s = min(-l_map/2, front_car_state.s) - 5
+			# self.x = self.s
 			return
 
 		# goal is the s value of parking starting point
@@ -653,6 +653,9 @@ def main():
 						writer.writerow([max_queue_length])
 
 					# Record the trajectory into the pickle file
+					# now = datetime.datetime.now()
+					# now = now.strftime("%Y-%m-%d-%H-%M-%S")
+					# file_name = time_data_path + '/trajectory_%s.pickle' % now
 					with open(time_data_path + '/trajectory.pickle', 'w') as f:
 						pickle.dump([time_list, state_list, input_list], f)
 

@@ -108,6 +108,7 @@ def plot_map():
 	########## Steady Vehicles ###########
 	global spots_U, spots_L
 	length = spots_L.shape[1]
+	steady_vehicles = []
 	for x in range(length):
 		if spots_U[0, x] == 1:
 			centerCar = [(x+0.5)*w_spot-l_map/2, 1.5*w_map - 0.5*l_spot]

@@ -1,4 +1,7 @@
 <launch>
+	<!-- declare arg to be passed in -->
+	<arg name="disp" default="true"/>
+
 	<rosparam 
 		command ="load" 
 		file="$(find parking)/launch/parking_parameters.yaml"/>
@@ -11,11 +14,13 @@
 		output="screen" />
 
 	<!-- Simulation Plot Node -->
+	<!-- Start this node if the disp arg is set to be true -->
 	<node 
 		pkg="parking" 
 		type="plot_car.py" 
 		name="plotCar" 
-		output="screen"/>
+		output="screen"
+		if="$(eval disp == true)"/>
 	<!-- Car Control Node -->
 	<node 
 		pkg="parking" 

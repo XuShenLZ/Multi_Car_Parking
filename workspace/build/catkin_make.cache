@@ -1,2 +1,0 @@
-H-OBCA:h-obcatest:parking
--DCATKIN_DEVEL_PREFIX=/home/mpc/Multi_Car_Parking/workspace/devel -DCMAKE_INSTALL_PREFIX=/home/mpc/Multi_Car_Parking/workspace/install -G Unix Makefiles

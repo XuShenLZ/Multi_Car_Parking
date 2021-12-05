@@ -1,9 +1,91 @@
 # Multi_Car_Parking
 Multi Car and High Density Parking Coodination
 
+## Configuration Steps (Fresh Ubuntu 16.04 with Python 2.7)
+1. install python-pip: `apt install python-pip`
+2. Upgrade pip: `pip install --upgrade pip`
+3. Intsall ROS kinetic, as described in ROS website
+4. Install Git and configure
+5. Install Julia 0.6.4 (For H-OBCA):
+	1. Download the package: `wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.4-linux-x86_64.tar.gz`
+	2. Extract the package
+	3. Add Julia to system environment: `sudo ln -s ~/path~to~julia~/bin/julia /usr/local/bin/julia`
+	4. Inside Julia, change the Python version to 2.7: `ENV["PYTHON"]="/usr/bin/python2.7"` and `Pkg.build("PyCall")`
+	5. Inside Julia, install `RobotOS`, `JuMP`, `Ipopt`, `PyPlot`, `NearestNeighbors`, `ControlSystems`, `JLD`
+6. Install python dependencies
+	1. (For Debug) `pip install ipdb`
+7. Clone the git repository, and add `--recursive` property
+8. Change the H-OBCA path in ".../src/parking/launch/parking_parameters.yaml" if this repository is not directly in home path
+9. Inside the workspace, use `catkin_make` and `source devel/setup.bash`
+10. Run `roslaunch parking parking_simulator.launch disp:=true` the `disp` property is set to be true if graphic output is needed
+
+
 ## Update log
+### 08/27/2019
+1. Added center line to the plot.
+2. Filled the occupied spots.
+
+### 07/30/2019
+1. Moved all simulation control into yaml file, no need to open `car_control.py` to edit.
+2. The data path will be automatically captured if the repository is under home path.
+3. The initial occupancy can be generated randomly after specifiying the number of vacant spots for incoming vehicles.
+
+### 07/03/2019
+1. **[large-map branch]** Fixed the starting position of vehicles. Now after the arrival time, vehicles will be following the front one in the queue or at the gate if there is no queue outside.
+2. **[large-map branch]** Record the queue length to file.
+
+### 07/02/2019
+1. **[large-map branch]** Fixed the problem that the car plot node asks for allocation and maneuver again. Now only control node is doing these;
+2. **[large-map branch]** Moved the path parameter to the yaml file, so that the tuning is easier. Also the `is_random` option is moved there as well.
+3. **[large-map branch]** Record the total time of each vehicle, total time of entire task as well. When dead lock can not be solved, pass this iteration and record "-1" to these data files.
+
+### 06/30/2019
+1. **[large-map branch]** Fixed the data saving function so that the weird dead lock can be investigated
+2. **[large-map branch]** Added random_all strategy which select randomly in all free spots.
+
+### 06/29/2019
+1. **[large-map branch]** Added Solo strategy, which assigns space from end to front with interval, then starts from end again.
+2. **[large-map branch]** Changed the `add_time` and `add_wait_time` so that it accumulates dt directly.
+3. **[large-map branch]** The arrival time interval is exponentially distributed. 
+4. Add the iteration layer that can directly loop over all interval sizes
+
+### 06/26/2019
+1. **[large-map branch]** Random strategy is desined and the corresponding data recording is available.
+
+### 06/20/2019
+1. **[large-map branch]** "Same Side" allocation strategies are written as parameterized by interval size;
+2. **[large-map branch]** Costmap is extended to make sure there is no collision before the entrance.
+
+### 06/06/2019
+1. **[large-map branch]** The collision detection must detect ALL vehicles rather than ones with higher priorities. The previous detection logic is commented.
+2. **[large-map branch]** Allocation strategies are written in a seperate file and different plans are started to be designed.
+3. **[large-map branch]** Decentralied the control. All car act at the same time based on the analysis of situation in last time step.
+4. **[large-map branch]** Added the dead lock detection and resolution method. Detection: if all vehicles are waiting, there is a dead lock. Solution: change the maneuver of the vehicle which is at the highest priority and is currently parking (this should be a participant of dead lock).
+5. **[large-map branch]** Fixed the bug in the simluator. Before the fix, previous plotters will not be cleared and they will be very messy after a few iterations. 
+
+### 06/03/2019
+1. **[large-map branch]** Improved the collision detection while turning. Now the detection pattern is the same as the case in straight lane. 
+2. **[large-map branch]** The time counter should be working properly and available for study.
+3. **[large-map branch]** Finished the repeatation test and record the waiting time into CSV file. 
+4. **[large-map branch]** Add the arg to roslaunch file so that the visualization is optional, which can speed up the test.
+5. To-do: Examine the decentralized method and possible dead lock. Think about the way to rewrite the spot allocation.
+
+### 06/03/2019
+1. **[large-map branch]** Added the collision detetcion while turning.
+2. To-do: Keep cleaning the code and test a best circular motion.
+
+### 06/02/2019
+1. **[large-map branch]** Added circular motion to turning part, but the collision avoidance method is not modified.
+2. **[large-map branch]** Combined the spot allocation funtion into the initialization function of Vehicle Class.
+3. To-do: Clean the code, test a best circular motion, and fix the collision detection while turning.
+
+### 05/14/2019
+1. **[large-map branch]** Fixed some bugs in allocation and now 44 cars can park. The hold simulation need about 30mins on the Thinkpad Desktop.
+
 ### 05/13/2019
 1. Instead of parallelly making collision free decision, now the vehicles have their priorities. The first car in the queue has the highest priority. The collision check only exists when considering other higher-priority counterparts.
+2. **[large-map branch]** Constructed a larger map and rewrote the dynamics and maneuver offsets.
+3. **[large-map branch]** The larger map works and the corresponding maneuvers are also shifted.
 
 ### 05/12/2019
 Back to ROS

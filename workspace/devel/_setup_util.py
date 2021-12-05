@@ -1,4 +1,4 @@
-#!/home/mpc/Envs/parking/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Software License Agreement (BSD License)
